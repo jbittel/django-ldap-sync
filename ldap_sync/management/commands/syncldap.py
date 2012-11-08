@@ -9,7 +9,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.models import SiteProfileNotAvailable
 
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class Command(NoArgsCommand):
@@ -37,7 +37,7 @@ class Command(NoArgsCommand):
             l.protocol_version = ldap.VERSION3
             l.simple_bind_s(settings.AUTH_LDAP_BASE_USER, settings.AUTH_LDAP_BASE_PASS)
         except ldap.LDAPError, e:
-            LOG.error("Cannot connect to LDAP server: %s" % str(e))
+            log.error("Cannot connect to LDAP server: %s" % str(e))
             return None
 
         lc = SimplePagedResultsControl(ldap.LDAP_CONTROL_PAGE_OID, True, (page_size, ''))
@@ -59,7 +59,7 @@ class Command(NoArgsCommand):
                 else:
                     break
             else:
-                LOG.error("Server ignores RFC 2696 control")
+                log.error("Server ignores RFC 2696 control")
                 break
 
         l.unbind_s()
@@ -70,7 +70,7 @@ class Command(NoArgsCommand):
         """
         Synchronize users with local user database.
         """
-        LOG.info("Synchronizing %d users" % len(users))
+        log.info("Synchronizing %d users" % len(users))
 
         for ldap_user in ldap_users:
             try:
@@ -101,34 +101,34 @@ class Command(NoArgsCommand):
                     user = User.objects.create_user(username, email)
                     user.first_name = first_name
                     user.last_name = last_name
-                    LOG.info("User '%s' created" % username)
+                    log.info("User '%s' created" % username)
                 else:
                     if not user.first_name == first_name.decode('utf-8'):
                         user.first_name = first_name
-                        LOG.info("User '%s' first name updated" % username)
+                        log.info("User '%s' first name updated" % username)
                     if not user.last_name == last_name.decode('utf-8'):
                         user.last_name = last_name
-                        LOG.info("User '%s' last name updated" % username)
+                        log.info("User '%s' last name updated" % username)
                     if not user.email == email:
                         user.email = email
-                        LOG.info("User '%s' email updated" % username)
+                        log.info("User '%s' email updated" % username)
                 user.save()
 
                 try:
                     profile = user.get_profile()
                 except (ObjectDoesNotExist, SiteProfileNotAvailable):
                     profile = UserProfile(user=user, id_num=id_num)
-                    LOG.info("User '%s' profile created" % username)
+                    log.info("User '%s' profile created" % username)
                 else:
                     if not profile.id_num == id_num:
                         profile.id_num = id_num
-                        LOG.info("User '%s' id number updated" % username)
+                        log.info("User '%s' id number updated" % username)
                 try:
                     profile.save()
                 except:
-                    LOG.error("Duplicate ID '%s' encountered for '%s'" % (id_num, username))
+                    log.error("Duplicate ID '%s' encountered for '%s'" % (id_num, username))
 
-        LOG.info("Users are synchronized")
+        log.info("Users are synchronized")
 
     def get_ldap_groups(self):
         """
@@ -160,5 +160,5 @@ class Command(NoArgsCommand):
                 except Group.DoesNotExist:
                     group = Group(name=group_name)
                     group.save()
-                    LOG.debug("Group '%s' created." % group_name)
-        LOG.info("Groups are synchronized")
+                    log.debug("Group '%s' created." % group_name)
+        log.info("Groups are synchronized")
