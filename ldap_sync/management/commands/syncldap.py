@@ -5,6 +5,7 @@ import logging
 from django.conf import settings
 from django.core.management.base import NoArgsCommand
 from django.contrib.auth.models import User
+from django.contrib.auth.models import Group
 from django.contrib.auth.models import SiteProfileNotAvailable
 
 
@@ -15,13 +16,13 @@ class Command(NoArgsCommand):
     help = "Synchronize users and groups with an authoritative LDAP server"
 
     def handle_noargs(self, **options):
-        groups = self.get_groups()
-        users = self.get_users()
+        ldap_groups = self.get_ldap_groups()
+        ldap_users = self.get_ldap_users()
 
-        self.sync_groups(groups)
-        self.sync_users(users, groups)
+        self.sync_ldap_groups(ldap_groups)
+        self.sync_ldap_users(ldap_users, ldap_groups)
 
-    def get_users(self):
+    def get_ldap_users(self):
         """
         Retrieve users from target LDAP server.
         """
@@ -65,13 +66,13 @@ class Command(NoArgsCommand):
 
         return users
 
-    def sync_users(self, users):
+    def sync_ldap_users(self, ldap_users, ldap_groups):
         """
         Synchronize users with local user database.
         """
         LOG.info("Synchronizing %d users" % len(users))
 
-        for ldap_user in users:
+        for ldap_user in ldap_users:
             try:
                 username = ldap_user[1]['mailNickname'][0]
             except:
@@ -129,14 +130,35 @@ class Command(NoArgsCommand):
 
         LOG.info("Users are synchronized")
 
-    def get_groups(self):
+    def get_ldap_groups(self):
         """
         Retrieve groups from target LDAP server.
         """
-        pass
+        scope = AUTH_LDAP_SCOPE
+        filter = "(&(objectclass=posixGroup))"
+        values = ['cn', 'memberUid']
+        l = ldap.open(AUTH_LDAP_SERVER)
+        l.protocol_version = ldap.VERSION3
+        l.simple_bind_s(AUTH_LDAP_BASE_USER,AUTH_LDAP_BASE_PASS)
+        result_id = l.search('ou=Groups,'+AUTH_LDAP_BASE, scope, filter, values)
+        result_type, result_data = l.result(result_id, 1)
+        l.unbind()
+        return result_data
 
-    def sync_groups(self):
+    def sync_ldap_groups(self, ldap_groups):
         """
         Synchronize groups with local group database.
         """
-        pass
+        for ldap_group in ldap_groups:
+            try:
+                group_name = ldap_group[1]['cn'][0]
+            except:
+                pass
+            else:
+                try:
+                    group = Group.objects.get(name=group_name)
+                except Group.DoesNotExist:
+                    group = Group(name=group_name)
+                    group.save()
+                    LOG.debug("Group '%s' created." % group_name)
+        LOG.info("Groups are synchronized")
