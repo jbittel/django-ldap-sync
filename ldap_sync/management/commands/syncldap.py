@@ -1,15 +1,20 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.contrib.auth.models import User
-from notify.models import UserProfile
-from django.conf import settings
 import ldap
 from ldap.controls import SimplePagedResultsControl
 import logging
 
+from django.conf import settings
+from django.core.management.base import NoArgsCommand
+from django.contrib.auth.models import User
+from django.contrib.auth.models import SiteProfileNotAvailable
+
+
 logger = logging.getLogger(__name__)
 
-class Command(BaseCommand):
-    def handle(self, *args, **options):
+
+class Command(NoArgsCommand):
+    help = "Synchronize users and groups with an authoritative LDAP server"
+
+    def handle_noargs(self, **options):
         ldap_users = self.get_ldap_users()
         logger.info("Synchronizing %d users" % len(ldap_users))
 
@@ -57,7 +62,7 @@ class Command(BaseCommand):
 
                 try:
                     profile = user.get_profile()
-                except UserProfile.DoesNotExist:
+                except (ObjectDoesNotExist, SiteProfileNotAvailable):
                     profile = UserProfile(user=user, id_num=id_num)
                     logger.info("User '%s' profile created" % username)
                 else:
