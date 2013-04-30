@@ -5,10 +5,14 @@ import logging
 
 from django.conf import settings
 from django.core.management.base import NoArgsCommand
-from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import SiteProfileNotAvailable
 from django.core.exceptions import ImproperlyConfigured
+try:
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+except ImportError:  # Django version < 1.5
+    from django.contrib.auth.models import User
 
 
 log = logging.getLogger(__name__)
