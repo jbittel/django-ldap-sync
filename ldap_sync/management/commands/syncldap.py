@@ -8,6 +8,7 @@ from django.core.management.base import NoArgsCommand
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import SiteProfileNotAvailable
 from django.core.exceptions import ImproperlyConfigured
+from django.db import IntegrityError
 try:
     from django.contrib.auth import get_user_model
     User = get_user_model()
@@ -15,11 +16,11 @@ except ImportError:  # Django version < 1.5
     from django.contrib.auth.models import User
 
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class Command(NoArgsCommand):
-    help = "Synchronize users and groups with an authoritative LDAP server"
+    help = "Synchronize local users and groups from an authoritative LDAP server"
 
     def handle_noargs(self, **options):
         ldap_groups = self.get_ldap_groups()
@@ -43,62 +44,56 @@ class Command(NoArgsCommand):
                 "specified in your Django settings file")
         user_attributes = attributes.keys()
 
-        ldap.set_option(ldap.OPT_REFERRALS, 0)
-        l = PagedLDAPObject(settings.LDAP_SYNC_URI)
-        l.protocol_version = 3
-        l.simple_bind_s(settings.LDAP_SYNC_BASE_USER,
-            settings.LDAP_SYNC_BASE_PASS)
-        l.page_size = getattr(settings, 'LDAP_SYNC_PAGE_SIZE', 100)
-
-        users = l.paged_search_ext_s(
-            settings.LDAP_SYNC_BASE,
-            ldap.SCOPE_SUBTREE,
-            user_filter,
-            attrlist=user_attributes,
-            serverctrls=None
-        )
-
-        l.unbind_s()
-
-        log.debug("Received %d users" % len(users))
+        users = self.ldap_search(user_filter, user_attributes)
+        logger.debug("Retrieved %d users" % len(users))
         return users
 
     def sync_ldap_users(self, ldap_users, ldap_groups):
         """
         Synchronize users with local user database.
         """
+        attributes = getattr(settings, 'LDAP_SYNC_USER_ATTRIBUTES', None)
+        username_field = getattr(User, 'USERNAME_FIELD', 'username')
+
         for ldap_user in ldap_users:
-            # Extract user data from LDAP response
-            user_data = {}
+            # Extract user attributes from LDAP response
+            user_attr = {}
             for (name, attr) in ldap_user[1].items():
-                user_data[settings.LDAP_SYNC_USER_ATTRIBUTES[name]] = attr[0]
+                user_attr[attributes[name]] = attr[0]
 
-            # Create filter attribute dict from config and response
-            filter_attr = getattr(settings, 'LDAP_SYNC_FILTER_ATTRIBUTES', None)
-            if not filter_attr:
-                raise ImproperlyConfigured("LDAP_SYNC_FILTER_ATTRIBUTES must be "
-                    "specified in your Django settings file")
+            try:
+                username = user_attr[username_field]
+                user_attr[username_field] = username.lower()
+            except KeyError:
+                raise ImproperlyConfigured("LDAP_SYNC_USER_ATTRIBUTES must "
+                    "contain the username field '%s'" % username_field)
 
-            # Build filter dictionary from specified filter attributes
-            user_filter = {}
-            for attr in filter_attr:
-                try:
-                    user_filter[attr] = user_data[attr]
-                except KeyError:
-                    pass
+            kwargs = {
+                username_field + '__iexact': username,
+                'defaults': user_attr,
+            }
 
-            # If no filter data was found, skip the user
-            if not user_filter:
+            # Create or update user data in the local database
+            try:
+                user, created = User.objects.get_or_create(**kwargs)
+            except IntegrityError as e:
+                logger.error("Error creating user %s: %s" % (username, e))
                 continue
 
-            # Create or update user data in local database
-            user = User.objects.filter(**user_filter).update(**user_data)
-            if not user:
-                user_data.update(user_filter)
-                user = User.objects.create(**user_data)
-                log.debug("Created user %s" % user.username)
+            updated_fields = []
+            if created:
+                logger.debug("Created user %s" % username)
+                user.set_unusable_password()
+                updated_fields.append('password')
+            else:
+                for name, attr in user_attr.items():
+                    current_attr = getattr(user, name)
+                    if current_attr != attr:
+                        setattr(user, name, attr)
+                        updated_fields.append(name)
+            user.save(update_fields=updated_fields)
 
-        log.info("Users are synchronized")
+        logger.info("Users are synchronized")
 
     def get_ldap_groups(self):
         """
@@ -115,24 +110,8 @@ class Command(NoArgsCommand):
                 "specified in your Django settings file")
         group_attributes = attributes.keys()
 
-        ldap.set_option(ldap.OPT_REFERRALS, 0)
-        l = PagedLDAPObject(settings.LDAP_SYNC_URI)
-        l.protocol_version = 3
-        l.simple_bind_s(settings.LDAP_SYNC_BASE_USER,
-            settings.LDAP_SYNC_BASE_PASS)
-        l.page_size = getattr(settings, 'LDAP_SYNC_PAGE_SIZE', 100)
-
-        groups = l.paged_search_ext_s(
-            settings.LDAP_SYNC_BASE,
-            ldap.SCOPE_SUBTREE,
-            group_filter,
-            attrlist=group_attributes,
-            serverctrls=None
-        )
-
-        l.unbind_s()
-
-        log.debug("Received %d groups" % len(groups))
+        groups = self.ldap_search(group_filter, group_attributes)
+        logger.debug("Retrieved %d groups" % len(groups))
         return groups
 
     def sync_ldap_groups(self, ldap_groups):
@@ -150,64 +129,86 @@ class Command(NoArgsCommand):
             except Group.DoesNotExist:
                 group = Group(**group_data)
                 group.save()
-                log.debug("Created group %s" % group.name)
+                logger.debug("Created group %s" % group.name)
 
-        log.info("Groups are synchronized")
+        logger.info("Groups are synchronized")
+
+    def ldap_search(self, filter, attributes):
+        """
+        Query the configured LDAP server with the provided search
+        filter and attribute list. Returns a list of the results
+        returned.
+        """
+        base_user = getattr(settings, 'LDAP_SYNC_BASE_USER', None)
+        if not base_user:
+            raise ImproperlyConfigured("LDAP_SYNC_BASE_USER must be "
+                "specified in your Django settings file")
+        base_pass = getattr(settings, 'LDAP_SYNC_BASE_PASS', None)
+        if not base_pass:
+            raise ImproperlyConfigured("LDAP_SYNC_BASE_PASS must be "
+                "specified in your Django settings file")
+
+        ldap.set_option(ldap.OPT_REFERRALS, 0)
+        l = PagedLDAPObject(settings.LDAP_SYNC_URI)
+        l.protocol_version = 3
+        try:
+            l.simple_bind_s(base_user, base_pass)
+        except ldap.LDAPError:
+            logger.error("Error connecting to LDAP server %s" %
+                         settings.LDAP_SYNC_URI)
+            return None
+
+        results = l.paged_search_ext_s(settings.LDAP_SYNC_BASE,
+                                       ldap.SCOPE_SUBTREE,
+                                       filter,
+                                       attrlist=attributes,
+                                       serverctrls=None)
+        l.unbind_s()
+        return results
 
 
 class PagedResultsSearchObject:
     """
     Taken from the python-ldap paged_search_ext_s.py demo, showing how to use
-    the paged results control:
-
-    https://bitbucket.org/jaraco/python-ldap/src/f208b6338a28/Demo/paged_search_ext_s.py
+    the paged results control: https://bitbucket.org/jaraco/python-ldap/
     """
-    page_size = 50
+    page_size = getattr(settings, 'LDAP_SYNC_PAGE_SIZE', 100)
 
     def paged_search_ext_s(self, base, scope, filterstr='(objectClass=*)',
-        attrlist=None, attrsonly=0, serverctrls=None, clientctrls=None,
-        timeout=-1, sizelimit=0):
+                           attrlist=None, attrsonly=0, serverctrls=None,
+                           clientctrls=None, timeout=-1, sizelimit=0):
         """
         Behaves exactly like LDAPObject.search_ext_s() but internally uses the
         simple paged results control to retrieve search results in chunks.
         """
         req_ctrl = SimplePagedResultsControl(True, size=self.page_size,
-            cookie='')
+                                             cookie='')
 
         # Send first search request
-        msgid = self.search_ext(
-            base,
-            ldap.SCOPE_SUBTREE,
-            filterstr,
-            attrlist=attrlist,
-            serverctrls=(serverctrls or [])+[req_ctrl]
-        )
-
+        msgid = self.search_ext(base, ldap.SCOPE_SUBTREE, filterstr,
+                                attrlist=attrlist,
+                                serverctrls=(serverctrls or []) + [req_ctrl])
         results = []
 
         while True:
             rtype, rdata, rmsgid, rctrls = self.result3(msgid)
             results.extend(rdata)
             # Extract the simple paged results response control
-            pctrls = [ c for c in rctrls
-                if c.controlType == SimplePagedResultsControl.controlType
-            ]
+            pctrls = [c for c in rctrls if c.controlType == \
+                      SimplePagedResultsControl.controlType]
 
             if pctrls:
                 if pctrls[0].cookie:
                     # Copy cookie from response control to request control
                     req_ctrl.cookie = pctrls[0].cookie
-                    msgid = self.search_ext(
-                        base,
-                        ldap.SCOPE_SUBTREE,
-                        filterstr,
-                        attrlist=attrlist,
-                        serverctrls=(serverctrls or [])+[req_ctrl]
-                    )
+                    msgid = self.search_ext(base, ldap.SCOPE_SUBTREE,
+                                            filterstr, attrlist=attrlist,
+                                            serverctrls=(serverctrls or []) + [req_ctrl])
                 else:
                     break
 
         return results
+
 
 class PagedLDAPObject(LDAPObject,PagedResultsSearchObject):
     pass
