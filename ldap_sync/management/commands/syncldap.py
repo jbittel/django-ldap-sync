@@ -143,6 +143,12 @@ class Command(NoArgsCommand):
         filter and attribute list. Returns a list of the results
         returned.
         """
+        uri = getattr(settings, 'LDAP_SYNC_URI', None)
+        if not uri:
+            error_msg = ("LDAP_SYNC_URI must be specified in your Django "
+                         "settings file")
+            raise ImproperlyConfigured(error_msg)
+
         base_user = getattr(settings, 'LDAP_SYNC_BASE_USER', None)
         if not base_user:
             error_msg = ("LDAP_SYNC_BASE_USER must be specified in your "
@@ -155,17 +161,22 @@ class Command(NoArgsCommand):
                          "Django settings file")
             raise ImproperlyConfigured(error_msg)
 
+        base = getattr(settings, 'LDAP_SYNC_BASE', None)
+        if not base:
+            error_msg = ("LDAP_SYNC_BASE must be specified in your Django "
+                         "settings file")
+            raise ImproperlyConfigured(error_msg)
+
         ldap.set_option(ldap.OPT_REFERRALS, 0)
-        l = PagedLDAPObject(settings.LDAP_SYNC_URI)
+        l = PagedLDAPObject(uri)
         l.protocol_version = 3
         try:
             l.simple_bind_s(base_user, base_pass)
         except ldap.LDAPError:
-            logger.error("Error connecting to LDAP server %s" %
-                         settings.LDAP_SYNC_URI)
-            return None
+            logger.error("Error connecting to LDAP server %s" % uri)
+            raise
 
-        results = l.paged_search_ext_s(settings.LDAP_SYNC_BASE,
+        results = l.paged_search_ext_s(base,
                                        ldap.SCOPE_SUBTREE,
                                        filter,
                                        attrlist=attributes,
