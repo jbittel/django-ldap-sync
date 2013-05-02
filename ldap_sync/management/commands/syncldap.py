@@ -6,7 +6,6 @@ import logging
 from django.conf import settings
 from django.core.management.base import NoArgsCommand
 from django.contrib.auth.models import Group
-from django.contrib.auth.models import SiteProfileNotAvailable
 from django.core.exceptions import ImproperlyConfigured
 from django.db import IntegrityError
 try:
@@ -20,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(NoArgsCommand):
-    help = "Synchronize local users and groups from an authoritative LDAP server"
+    help = "Synchronize users and groups from an authoritative LDAP server"
 
     def handle_noargs(self, **options):
         ldap_groups = self.get_ldap_groups()
@@ -35,13 +34,15 @@ class Command(NoArgsCommand):
         """
         user_filter = getattr(settings, 'LDAP_SYNC_USER_FILTER', None)
         if not user_filter:
-            raise ImproperlyConfigured("LDAP_SYNC_USER_FILTER must be "
-                "specified in your Django settings file")
+            error_msg = ("LDAP_SYNC_USER_FILTER must be specified in your "
+                         "Django settings file")
+            raise ImproperlyConfigured(error_msg)
 
         attributes = getattr(settings, 'LDAP_SYNC_USER_ATTRIBUTES', None)
         if not attributes:
-            raise ImproperlyConfigured("LDAP_SYNC_USER_ATTRIBUTES must be "
-                "specified in your Django settings file")
+            error_msg = ("LDAP_SYNC_USER_ATTRIBUTES must be specified in "
+                         "your Django settings file")
+            raise ImproperlyConfigured(error_msg)
         user_attributes = attributes.keys()
 
         users = self.ldap_search(user_filter, user_attributes)
@@ -65,8 +66,9 @@ class Command(NoArgsCommand):
                 username = user_attr[username_field]
                 user_attr[username_field] = username.lower()
             except KeyError:
-                raise ImproperlyConfigured("LDAP_SYNC_USER_ATTRIBUTES must "
-                    "contain the username field '%s'" % username_field)
+                error_msg = ("LDAP_SYNC_USER_ATTRIBUTES must contain the "
+                             "username field '%s'" % username_field)
+                raise ImproperlyConfigured(error_msg)
 
             kwargs = {
                 username_field + '__iexact': username,
@@ -101,13 +103,15 @@ class Command(NoArgsCommand):
         """
         group_filter = getattr(settings, 'LDAP_SYNC_GROUP_FILTER', None)
         if not group_filter:
-            raise ImproperlyConfigured("LDAP_SYNC_GROUP_FILTER must be "
-                "specified in your Django settings file")
+            error_msg = ("LDAP_SYNC_GROUP_FILTER must be specified in your "
+                         "Django settings file")
+            raise ImproperlyConfigured(error_msg)
 
         attributes = getattr(settings, 'LDAP_SYNC_GROUP_ATTRIBUTES', None)
         if not attributes:
-            raise ImproperlyConfigured("LDAP_SYNC_GROUP_ATTRIBUTES must be "
-                "specified in your Django settings file")
+            error_msg = ("LDAP_SYNC_GROUP_ATTRIBUTES must be specified in "
+                         "your Django settings file")
+            raise ImproperlyConfigured(error_msg)
         group_attributes = attributes.keys()
 
         groups = self.ldap_search(group_filter, group_attributes)
@@ -141,12 +145,15 @@ class Command(NoArgsCommand):
         """
         base_user = getattr(settings, 'LDAP_SYNC_BASE_USER', None)
         if not base_user:
-            raise ImproperlyConfigured("LDAP_SYNC_BASE_USER must be "
-                "specified in your Django settings file")
+            error_msg = ("LDAP_SYNC_BASE_USER must be specified in your "
+                         "Django settings file")
+            raise ImproperlyConfigured(error_msg)
+
         base_pass = getattr(settings, 'LDAP_SYNC_BASE_PASS', None)
         if not base_pass:
-            raise ImproperlyConfigured("LDAP_SYNC_BASE_PASS must be "
-                "specified in your Django settings file")
+            error_msg = ("LDAP_SYNC_BASE_PASS must be specified in your "
+                         "Django settings file")
+            raise ImproperlyConfigured(error_msg)
 
         ldap.set_option(ldap.OPT_REFERRALS, 0)
         l = PagedLDAPObject(settings.LDAP_SYNC_URI)
@@ -194,7 +201,7 @@ class PagedResultsSearchObject:
             rtype, rdata, rmsgid, rctrls = self.result3(msgid)
             results.extend(rdata)
             # Extract the simple paged results response control
-            pctrls = [c for c in rctrls if c.controlType == \
+            pctrls = [c for c in rctrls if c.controlType ==
                       SimplePagedResultsControl.controlType]
 
             if pctrls:
@@ -203,12 +210,13 @@ class PagedResultsSearchObject:
                     req_ctrl.cookie = pctrls[0].cookie
                     msgid = self.search_ext(base, ldap.SCOPE_SUBTREE,
                                             filterstr, attrlist=attrlist,
-                                            serverctrls=(serverctrls or []) + [req_ctrl])
+                                            serverctrls=(serverctrls or []) +
+                                            [req_ctrl])
                 else:
                     break
 
         return results
 
 
-class PagedLDAPObject(LDAPObject,PagedResultsSearchObject):
+class PagedLDAPObject(LDAPObject, PagedResultsSearchObject):
     pass
