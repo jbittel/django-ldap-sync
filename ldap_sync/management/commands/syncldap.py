@@ -56,6 +56,11 @@ class Command(NoArgsCommand):
         attributes = getattr(settings, 'LDAP_SYNC_USER_ATTRIBUTES', None)
         username_field = getattr(User, 'USERNAME_FIELD', 'username')
 
+        if username_field not in attributes.values():
+            error_msg = ("LDAP_SYNC_USER_ATTRIBUTES must contain the "
+                         "username field '%s'" % username_field)
+            raise ImproperlyConfigured(error_msg)
+
         for ldap_user in ldap_users:
             # Extract user attributes from LDAP response
             user_attr = {}
@@ -66,9 +71,9 @@ class Command(NoArgsCommand):
                 username = user_attr[username_field]
                 user_attr[username_field] = username.lower()
             except KeyError:
-                error_msg = ("LDAP_SYNC_USER_ATTRIBUTES must contain the "
-                             "username field '%s'" % username_field)
-                raise ImproperlyConfigured(error_msg)
+                logger.warn("User is missing a required attribute '%s'" %
+                            username_field)
+                continue
 
             kwargs = {
                 username_field + '__iexact': username,
@@ -120,20 +125,44 @@ class Command(NoArgsCommand):
 
     def sync_ldap_groups(self, ldap_groups):
         """
-        Synchronize groups with local group database.
+        Synchronize LDAP groups with local group database.
         """
+        attributes = getattr(settings, 'LDAP_SYNC_GROUP_ATTRIBUTES', None)
+        groupname_field = 'name'
+
+        if groupname_field not in attributes.values():
+            error_msg = ("LDAP_SYNC_GROUP_ATTRIBUTES must contain the "
+                         "group name field '%s'" % groupname_field)
+            raise ImproperlyConfigured(error_msg)
+
         for ldap_group in ldap_groups:
             # Extract user data from LDAP response
-            group_data = {}
+            group_attr = {}
             for (name, attr) in ldap_group[1].items():
-                group_data[settings.LDAP_SYNC_GROUP_ATTRIBUTES[name]] = attr[0]
+                group_attr[attributes[name]] = attr[0]
 
             try:
-                group = Group.objects.get(**group_data)
-            except Group.DoesNotExist:
-                group = Group(**group_data)
-                group.save()
-                logger.debug("Created group %s" % group.name)
+                groupname = group_attr[groupname_field]
+                group_attr[groupname_field] = groupname.lower()
+            except KeyError:
+                logger.warn("Group is missing a required attribute '%s'" %
+                            groupname_field)
+                continue
+
+            kwargs = {
+                groupname_field + '__iexact': groupname,
+                'defaults': group_attr,
+            }
+
+            # Create or update group data in the local database
+            try:
+                group, created = Group.objects.get_or_create(**kwargs)
+            except IntegrityError as e:
+                logger.error("Error creating group: %s" % e)
+                continue
+
+            if created:
+                logger.debug("Created group %s" % groupname)
 
         logger.info("Groups are synchronized")
 
