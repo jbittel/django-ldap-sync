@@ -85,20 +85,19 @@ class Command(NoArgsCommand):
                 user, created = User.objects.get_or_create(**kwargs)
             except IntegrityError as e:
                 logger.error("Error creating user %s: %s" % (username, e))
-                continue
-
-            updated_fields = []
-            if created:
-                logger.debug("Created user %s" % username)
-                user.set_unusable_password()
-                updated_fields.append('password')
             else:
-                for name, attr in user_attr.items():
-                    current_attr = getattr(user, name)
-                    if current_attr != attr:
-                        setattr(user, name, attr)
-                        updated_fields.append(name)
-            user.save(update_fields=updated_fields)
+                updated_fields = []
+                if created:
+                    logger.debug("Created user %s" % username)
+                    user.set_unusable_password()
+                    updated_fields.append('password')
+                else:
+                    for name, attr in user_attr.items():
+                        current_attr = getattr(user, name)
+                        if current_attr != attr.decode('utf-8'):
+                            setattr(user, name, attr)
+                            updated_fields.append(name)
+                user.save(update_fields=updated_fields)
 
         logger.info("Users are synchronized")
 
@@ -158,11 +157,10 @@ class Command(NoArgsCommand):
             try:
                 group, created = Group.objects.get_or_create(**kwargs)
             except IntegrityError as e:
-                logger.error("Error creating group: %s" % e)
-                continue
-
-            if created:
-                logger.debug("Created group %s" % groupname)
+                logger.error("Error creating group %s" % e)
+            else:
+                if created:
+                    logger.debug("Created group %s" % groupname)
 
         logger.info("Groups are synchronized")
 
