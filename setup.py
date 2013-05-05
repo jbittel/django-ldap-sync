@@ -1,6 +1,8 @@
 from distutils.core import setup
 import os
 
+from ldap_sync import __version__ as version
+
 
 def split_relative_path(path):
     """
@@ -52,19 +54,19 @@ for dirpath, dirnames, filenames in os.walk('ldap_sync'):
             package_data.append(os.path.join(relative_path, f))
 
 setup(
-    name = 'django-ldap-sync',
-    version = '0.1',
-    description = 'A Django application for synchronizing LDAP users and groups',
-    long_description = get_readme('README'),
-    author = 'Jason Bittel',
-    author_email = 'jason.bittel@gmail.com',
-    url = 'http://github.com/jbittel/django-ldap-sync',
-    download_url = 'https://github.com/jbittel/django-ldap-sync/tarball/master',
-    package_dir = { 'ldap-sync': 'ldap-sync' },
-    packages = packages,
-    package_data = { 'ldap-sync': package_data },
-    license = 'BSD',
-    classifiers = [
+    name='django-ldap-sync',
+    version=version,
+    description='A Django application for synchronizing LDAP users and groups',
+    long_description=get_readme('README'),
+    author='Jason Bittel',
+    author_email='jason.bittel@gmail.com',
+    url='https://github.com/jbittel/django-ldap-sync',
+    download_url='https://github.com/jbittel/django-ldap-sync/downloads',
+    package_dir={ 'ldap-sync': 'ldap-sync' },
+    packages=packages,
+    package_data={ 'ldap-sync': package_data },
+    license='BSD',
+    classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Environment :: Web Environment',
         'Programming Language :: Python',
@@ -75,5 +77,5 @@ setup(
         'Topic :: System :: Systems Administration :: Authentication/Directory',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    keywords = ['django', 'ldap', 'active directory', 'synchronize', 'sync'],
+    keywords=['django', 'ldap', 'active directory', 'synchronize', 'sync'],
 )
