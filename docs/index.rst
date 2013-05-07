@@ -7,10 +7,11 @@ django-ldap-sync documentation
 ==============================
 
 django-ldap-sync provides a Django management command for synchronizing LDAP
-users and groups. It performs a one-way synchronization to keep the local
-Django users in line with an authoritative LDAP server.
+users and groups. It performs a one-way synchronization to both add and update
+the local Django users and groups.
 
-Initially inspired by this snippet: http://djangosnippets.org/snippets/893/
+This management command can be fired manually on demand, via an automatic
+cron script or through the included `Celery`_ task.
 
 Contents
 --------
@@ -18,5 +19,14 @@ Contents
 .. toctree::
    :maxdepth: 2
 
+   installation
    settings
    changelog
+
+Credits
+-------
+
+Initially inspired by `this snippet`_.
+
+.. _Celery: http://www.celeryproject.org
+.. _this snippet: http://djangosnippets.org/snippets/893/
