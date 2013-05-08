@@ -57,7 +57,7 @@ setup(
     name='django-ldap-sync',
     version=version,
     description='A Django application for synchronizing LDAP users and groups',
-    long_description=get_readme('README'),
+    long_description=get_readme('README.rst'),
     author='Jason Bittel',
     author_email='jason.bittel@gmail.com',
     url='https://github.com/jbittel/django-ldap-sync',
