@@ -12,18 +12,22 @@ Quickstart
 
       pip install django-ldap-sync
 
-#. Add it to the installed apps::
+#. Append it to the installed apps::
 
       INSTALLED_APPS = (
           # ...
           'ldap_sync',
       )
 
-#. Configure the required settings.
+#. Configure the required `settings`_.
 
 #. Run the synchronization management command::
 
       manage.py syncldap
 
 For more information on installation or configuration, see the included
-documentation.
+documentation or read the documentation online at
+`django-ldap-sync.readthedocs.org`_.
+
+.. _settings: http://django-ldap-sync.readthedocs.org/en/latest/settings.html
+.. _django-ldap-sync.readthedocs.org: http://django-ldap-sync.readthedocs.org
