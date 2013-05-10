@@ -26,7 +26,7 @@ class Command(NoArgsCommand):
         ldap_users = self.get_ldap_users()
 
         self.sync_ldap_groups(ldap_groups)
-        self.sync_ldap_users(ldap_users, ldap_groups)
+        self.sync_ldap_users(ldap_users)
 
     def get_ldap_users(self):
         """
@@ -49,7 +49,7 @@ class Command(NoArgsCommand):
         logger.debug("Retrieved %d users" % len(users))
         return users
 
-    def sync_ldap_users(self, ldap_users, ldap_groups):
+    def sync_ldap_users(self, ldap_users):
         """
         Synchronize users with local user database.
         """
