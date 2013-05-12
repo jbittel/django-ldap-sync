@@ -1,70 +1,40 @@
+#!/usr/bin/env python
+
 from distutils.core import setup
 import os
 
 from ldap_sync import __version__ as version
 
 
-def split_relative_path(path):
+def read_file(filename):
     """
-    Given a path, return the path as a string with the
-    first path component removed (e.g. 'foo/bar/baz' would
-    be returned as 'bar/baz').
-    """
-    parts = []
-    while True:
-        head, tail = os.path.split(path)
-        if head == path:
-            if path:
-                parts.append(path)
-            break
-        parts.append(tail)
-        path = head
-    parts.reverse()
-    if len(parts) > 1:
-        return os.path.join(*parts[1:])
-    else:
-        return ''
-
-def get_readme(filename):
-    """
-    Utility function to print the README file, used for the long_description
-    setup argument below.
+    Utility function to read a provided filename.
     """
     return open(os.path.join(os.path.dirname(__file__), filename)).read()
 
-packages, package_data = [], []
-root_dir = os.path.dirname(__file__)
-if root_dir:
-    os.chdir(root_dir)
 
-# Collect the lists of packages and package files, starting
-# from the base project directory (adapted from the Django setup script)
-for dirpath, dirnames, filenames in os.walk('ldap_sync'):
-    # Collect packages
-    if '__init__.py' in filenames:
-        pkg_path = os.path.normpath(dirpath)
-        pkg = pkg_path.replace(os.sep, '.')
-        if os.altsep:
-            pkg = pkg.replace(os.altsep, '.')
-        packages.append(pkg)
-    # Collect ancillary package files
-    elif filenames:
-        relative_path = split_relative_path(dirpath)
-        for f in filenames:
-            package_data.append(os.path.join(relative_path, f))
+packages = [
+    'ldap_sync',
+    'ldap_sync.management',
+    'ldap_sync.management.commands',
+]
+
+package_data = {
+    '': ['LICENSE', 'README.rst'],
+}
 
 setup(
     name='django-ldap-sync',
     version=version,
     description='A Django application for synchronizing LDAP users and groups',
-    long_description=get_readme('README.rst'),
+    long_description=read_file('README.rst'),
     author='Jason Bittel',
     author_email='jason.bittel@gmail.com',
     url='https://github.com/jbittel/django-ldap-sync',
     download_url='https://github.com/jbittel/django-ldap-sync/downloads',
     package_dir={ 'ldap-sync': 'ldap-sync' },
     packages=packages,
-    package_data={ 'ldap-sync': package_data },
+    package_data=package_data,
     license='BSD',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
