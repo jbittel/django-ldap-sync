@@ -62,7 +62,7 @@ class Command(NoArgsCommand):
             # Extract user attributes from LDAP response
             user_attr = {}
             for (name, attr) in ldap_user[1].items():
-                user_attr[attributes[name]] = attr[0]
+                user_attr[attributes[name]] = attr[0].decode('utf-8')
 
             try:
                 username = user_attr[username_field]
@@ -91,7 +91,7 @@ class Command(NoArgsCommand):
                 else:
                     for name, attr in user_attr.items():
                         current_attr = getattr(user, name)
-                        if current_attr != attr.decode('utf-8'):
+                        if current_attr != attr:
                             setattr(user, name, attr)
                             updated_fields.append(name)
                 user.save(update_fields=updated_fields)
@@ -135,7 +135,7 @@ class Command(NoArgsCommand):
             # Extract user data from LDAP response
             group_attr = {}
             for (name, attr) in ldap_group[1].items():
-                group_attr[attributes[name]] = attr[0]
+                group_attr[attributes[name]] = attr[0].decode('utf-8')
 
             try:
                 groupname = group_attr[groupname_field]
