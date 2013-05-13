@@ -5,14 +5,10 @@ import logging
 
 from django.conf import settings
 from django.core.management.base import NoArgsCommand
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ImproperlyConfigured
 from django.db import IntegrityError
-try:
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
-except ImportError:  # Django version < 1.5
-    from django.contrib.auth.models import User
 
 
 logger = logging.getLogger(__name__)
@@ -53,8 +49,9 @@ class Command(NoArgsCommand):
         """
         Synchronize users with local user database.
         """
+        model = get_user_model()
         attributes = getattr(settings, 'LDAP_SYNC_USER_ATTRIBUTES', None)
-        username_field = getattr(User, 'USERNAME_FIELD', 'username')
+        username_field = getattr(model, 'USERNAME_FIELD', 'username')
 
         if username_field not in attributes.values():
             error_msg = ("LDAP_SYNC_USER_ATTRIBUTES must contain the "
@@ -82,7 +79,7 @@ class Command(NoArgsCommand):
 
             # Create or update user data in the local database
             try:
-                user, created = User.objects.get_or_create(**kwargs)
+                user, created = model.objects.get_or_create(**kwargs)
             except IntegrityError as e:
                 logger.error("Error creating user %s: %s" % (username, e))
             else:
