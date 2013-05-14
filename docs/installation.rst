@@ -52,7 +52,7 @@ project's ``settings.py`` (or equivalent) file::
 
    INSTALLED_APPS = (
        # ...
-       'mama_cas',
+       'ldap_sync',
    )
 
 django-ldap-sync also has a number of required settings that will need to be
