@@ -19,10 +19,12 @@ class Command(NoArgsCommand):
 
     def handle_noargs(self, **options):
         ldap_groups = self.get_ldap_groups()
-        ldap_users = self.get_ldap_users()
+        if ldap_groups:
+            self.sync_ldap_groups(ldap_groups)
 
-        self.sync_ldap_groups(ldap_groups)
-        self.sync_ldap_users(ldap_users)
+        ldap_users = self.get_ldap_users()
+        if ldap_users:
+            self.sync_ldap_users(ldap_users)
 
     def get_ldap_users(self):
         """
@@ -30,9 +32,9 @@ class Command(NoArgsCommand):
         """
         user_filter = getattr(settings, 'LDAP_SYNC_USER_FILTER', None)
         if not user_filter:
-            error_msg = ("LDAP_SYNC_USER_FILTER must be specified in your "
-                         "Django settings file")
-            raise ImproperlyConfigured(error_msg)
+            msg = "LDAP_SYNC_USER_FILTER not configured, skipping user sync"
+            logger.info(msg)
+            return None
 
         attributes = getattr(settings, 'LDAP_SYNC_USER_ATTRIBUTES', None)
         if not attributes:
@@ -104,9 +106,9 @@ class Command(NoArgsCommand):
         """
         group_filter = getattr(settings, 'LDAP_SYNC_GROUP_FILTER', None)
         if not group_filter:
-            error_msg = ("LDAP_SYNC_GROUP_FILTER must be specified in your "
-                         "Django settings file")
-            raise ImproperlyConfigured(error_msg)
+            msg = "LDAP_SYNC_GROUP_FILTER not configured, skipping group sync"
+            logger.info(msg)
+            return None
 
         attributes = getattr(settings, 'LDAP_SYNC_GROUP_ATTRIBUTES', None)
         if not attributes:
