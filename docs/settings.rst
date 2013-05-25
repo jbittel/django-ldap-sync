@@ -52,6 +52,11 @@ Settings
 
       LDAP_SYNC_USER_FILTER = "(&(objectCategory=person)(objectClass=User)(memberOf=CN=Web,OU=Users,DC=example,DC=com))"
 
+    .. note::
+
+       If this setting is not specified, the user synchronization step will
+       be skipped.
+
 .. attribute:: LDAP_SYNC_USER_ATTRIBUTES
 
    :default: ``{}``
@@ -76,6 +81,11 @@ Settings
    should be a string specifying any valid filter string::
 
       LDAP_SYNC_GROUP_FILTER = "(&(objectclass=group))"
+
+    .. note::
+
+       If this setting is not specified, the group synchronization step will
+       be skipped.
 
 .. attribute:: LDAP_SYNC_GROUP_ATTRIBUTES
 
