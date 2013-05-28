@@ -52,10 +52,10 @@ Settings
 
       LDAP_SYNC_USER_FILTER = "(&(objectCategory=person)(objectClass=User)(memberOf=CN=Web,OU=Users,DC=example,DC=com))"
 
-    .. note::
+   .. note::
 
-       If this setting is not specified, the user synchronization step will
-       be skipped.
+      If this setting is not specified, the user synchronization step will
+      be skipped.
 
 .. attribute:: LDAP_SYNC_USER_ATTRIBUTES
 
@@ -82,10 +82,10 @@ Settings
 
       LDAP_SYNC_GROUP_FILTER = "(&(objectclass=group))"
 
-    .. note::
+   .. note::
 
-       If this setting is not specified, the group synchronization step will
-       be skipped.
+      If this setting is not specified, the group synchronization step will
+      be skipped.
 
 .. attribute:: LDAP_SYNC_GROUP_ATTRIBUTES
 
