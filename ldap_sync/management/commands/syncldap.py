@@ -70,8 +70,8 @@ class Command(NoArgsCommand):
                 username = user_attr[username_field]
                 user_attr[username_field] = username.lower()
             except KeyError:
-                logger.warn("User is missing a required attribute '%s'" %
-                            username_field)
+                logger.warning("User is missing a required attribute '%s'" %
+                               username_field)
                 continue
 
             kwargs = {
@@ -143,8 +143,8 @@ class Command(NoArgsCommand):
                 groupname = group_attr[groupname_field]
                 group_attr[groupname_field] = groupname.lower()
             except KeyError:
-                logger.warn("Group is missing a required attribute '%s'" %
-                            groupname_field)
+                logger.warning("Group is missing a required attribute '%s'" %
+                               groupname_field)
                 continue
 
             kwargs = {
