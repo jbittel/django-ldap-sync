@@ -2,8 +2,8 @@ django-ldap-sync
 ================
 
 django-ldap-sync provides a Django management command for synchronizing LDAP
-users and groups. It performs a one-way synchronization to both add and update
-the local Django users and groups.
+users and groups. It performs a one-way synchronization to create and update
+local Django users and groups.
 
 Quickstart
 ----------
@@ -25,7 +25,7 @@ Quickstart
 
       manage.py syncldap
 
-For more information on installation or configuration, see the included
+For more information on installation and configuration, see the included
 documentation or read the documentation online at
 `django-ldap-sync.readthedocs.org`_.
 

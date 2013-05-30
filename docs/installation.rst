@@ -6,10 +6,13 @@ Installation
 Prerequisites
 -------------
 
-The primary prerequisite of django-ldap-sync is `Django`_ itself. For
-django-ldap-sync |version|, Django 1.4 or later is required. Earlier versions
-of Django may work, but are not tested or supported. See the `Django
-downloads`_ page for information on downloading and installing Django.
+django-ldap-sync |version| has two required prerequisites:
+
+   * `Django`_ 1.5 or later
+   * `python-ldap`_ 2.4.10 or later
+
+Earlier versions of these dependencies may work, but are not tested or
+supported.
 
 Installing
 ----------
@@ -47,23 +50,42 @@ as a `tarball`_.
 Configuring
 -----------
 
-First, add django-ldap-sync to the ``INSTALLED_APPS`` setting within your
-project's ``settings.py`` (or equivalent) file::
+Add django-ldap-sync to the ``INSTALLED_APPS`` setting within your project's
+``settings.py`` (or equivalent) file::
 
    INSTALLED_APPS = (
        # ...
        'ldap_sync',
    )
 
-django-ldap-sync also has a number of required settings that will need to be
-configured before it can operate. See the :ref:`settings` documentation for
-more information on both required and optional settings.
+django-ldap-sync has a number of required settings that need to be configured
+before it can operate. See the :ref:`settings` documentation for more
+information on the required and optional settings.
+
+Celery
+~~~~~~
+
+Typically you will want to run this management command on a regular basis to
+keep the users synchronized. One way to accomplish this is using a
+periodic Celery task. This requires additional configuration within your
+settings file::
+
+   CELERYBEAT_SCHEDULE = {
+       'synchronize_local_users': {
+           'task': 'ldap_sync.tasks.syncldap',
+           'schedule': timedelta(minutes=30),
+       }
+   }
+
+For more information and other configuration options, see the Celery
+documentation on `periodic tasks`_.
 
 .. _Django: http://www.djangoproject.com/
+.. _python-ldap: http://www.python-ldap.org/
 .. _Django downloads: https://www.djangoproject.com/download/
-.. _requests: http://python-requests.org/
 .. _virtualenv: http://www.virtualenv.org/
 .. _pip: http://www.pip-installer.org/
 .. _PyPI: https://pypi.python.org/pypi/django-ldap-sync/
 .. _GitHub: https://github.com/jbittel/django-ldap-sync
 .. _tarball: https://github.com/jbittel/django-ldap-sync/tarball/master
+.. _periodic tasks: http://docs.celeryproject.org/en/latest/userguide/periodic-tasks.html
