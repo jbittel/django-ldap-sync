@@ -62,6 +62,13 @@ class Command(NoArgsCommand):
 
         for ldap_user in ldap_users:
             # Extract user attributes from LDAP response
+            
+            # Check to see if this user has valid cname. 
+            (cname, attribs) = ldap_user
+            if cname == None:
+                logger.warning("User is missing CNAME, skipping")
+                continue
+            
             user_attr = {}
             for (name, attr) in ldap_user[1].items():
                 user_attr[attributes[name]] = attr[0].decode('utf-8')
