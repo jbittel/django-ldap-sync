@@ -60,17 +60,15 @@ class Command(NoArgsCommand):
                          "username field '%s'" % username_field)
             raise ImproperlyConfigured(error_msg)
 
-        for ldap_user in ldap_users:
-            # Extract user attributes from LDAP response
-            
+        for cname, attrs in ldap_users:
             # Check to see if this user has valid cname. 
-            (cname, attribs) = ldap_user
             if cname == None:
                 logger.warning("User is missing CNAME, skipping")
                 continue
             
+            # Extract user attributes from LDAP response
             user_attr = {}
-            for (name, attr) in ldap_user[1].items():
+            for name, attr in attrs.items():
                 user_attr[attributes[name]] = attr[0].decode('utf-8')
 
             try:
@@ -140,10 +138,10 @@ class Command(NoArgsCommand):
                          "group name field '%s'" % groupname_field)
             raise ImproperlyConfigured(error_msg)
 
-        for ldap_group in ldap_groups:
+        for cname, attrs in ldap_groups:
             # Extract user data from LDAP response
             group_attr = {}
-            for (name, attr) in ldap_group[1].items():
+            for name, attr in attrs.items():
                 group_attr[attributes[name]] = attr[0].decode('utf-8')
 
             try:
