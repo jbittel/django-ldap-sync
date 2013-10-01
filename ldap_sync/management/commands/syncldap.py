@@ -61,14 +61,16 @@ class Command(NoArgsCommand):
             raise ImproperlyConfigured(error_msg)
 
         for cname, attrs in ldap_users:
-            # Check to see if this user has valid cname. 
-            if cname == None:
-                logger.warning("User is missing CNAME, skipping")
+            # In some cases with AD, attrs is a list instead of a
+            # dict; these are not valid users, so skip them
+            try:
+                items = attrs.items()
+            except AttributeError:
                 continue
-            
+
             # Extract user attributes from LDAP response
             user_attr = {}
-            for name, attr in attrs.items():
+            for name, attr in items:
                 user_attr[attributes[name]] = attr[0].decode('utf-8')
 
             try:
@@ -139,9 +141,16 @@ class Command(NoArgsCommand):
             raise ImproperlyConfigured(error_msg)
 
         for cname, attrs in ldap_groups:
+            # In some cases with AD, attrs is a list instead of a
+            # dict; these are not valid groups, so skip them
+            try:
+                items = attrs.items()
+            except AttributeError:
+                continue
+
             # Extract user data from LDAP response
             group_attr = {}
-            for name, attr in attrs.items():
+            for name, attr in items:
                 group_attr[attributes[name]] = attr[0].decode('utf-8')
 
             try:
