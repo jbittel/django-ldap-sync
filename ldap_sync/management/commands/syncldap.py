@@ -1,7 +1,8 @@
+import logging
+
 import ldap
 from ldap.ldapobject import LDAPObject
 from ldap.controls import SimplePagedResultsControl
-import logging
 
 from django.conf import settings
 from django.core.management.base import NoArgsCommand
