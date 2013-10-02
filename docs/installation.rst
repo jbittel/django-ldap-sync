@@ -9,7 +9,7 @@ Prerequisites
 django-ldap-sync |version| has two required prerequisites:
 
    * `Django`_ 1.5 or later
-   * `python-ldap`_ 2.4.10 or later
+   * `python-ldap`_ 2.4.13 or later
 
 The automatic installation options below will install or update python-ldap as
 necessary. Earlier versions of these dependencies may work, but are not tested

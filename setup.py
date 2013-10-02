@@ -48,5 +48,5 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     keywords=['django', 'ldap', 'active directory', 'synchronize', 'sync'],
-    install_requires=['python-ldap >= 2.4.10'],
+    install_requires=['python-ldap >= 2.4.13'],
 )
