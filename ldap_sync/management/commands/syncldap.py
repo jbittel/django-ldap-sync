@@ -9,7 +9,7 @@ from django.core.management.base import NoArgsCommand
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ImproperlyConfigured
-from django.db import IntegrityError
+from django.db import IntegrityError, DataError
 
 
 logger = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ class Command(NoArgsCommand):
             # Create or update user data in the local database
             try:
                 user, created = model.objects.get_or_create(**kwargs)
-            except IntegrityError as e:
+            except (IntegrityError, DataError) as e:
                 logger.error("Error creating user %s: %s" % (username, e))
             else:
                 updated_fields = []
