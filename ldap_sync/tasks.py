@@ -1,9 +1,9 @@
 from django.core.management import call_command
 
-from celery import task
+from celery import shared_task
 
 
-@task
+@shared_task
 def syncldap():
     """
     Call the appropriate management command to synchronize the LDAP users
