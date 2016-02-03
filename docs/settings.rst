@@ -21,7 +21,7 @@ Settings
    The root of the LDAP tree to search for user account information. The
    contents of this tree can be further refined using the filtering settings.
    This should be a string specifying the complete root path::
- 
+
       LDAP_SYNC_BASE = "OU=Users,DC=example,DC=com"
 
 .. attribute:: LDAP_SYNC_BASE_USER
@@ -72,6 +72,14 @@ Settings
           "sn": "last_name",
           "mail": "email",
       }
+
+.. attribute:: LDAP_SYNC_USERNAME_FIELD
+
+   :default: ``None``
+
+   An optional field on the synchronized User model to use as the unique key for
+   each user. If not specified, the User model's ``USERNAME_FIELD`` will be used.
+   If specified, the field must be included in ``LDAP_SYNC_USER_ATTRIBUTES``.
 
 .. attribute:: LDAP_SYNC_GROUP_FILTER
 

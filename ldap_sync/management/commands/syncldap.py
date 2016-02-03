@@ -54,7 +54,13 @@ class Command(NoArgsCommand):
         """
         model = get_user_model()
         attributes = getattr(settings, 'LDAP_SYNC_USER_ATTRIBUTES', None)
-        username_field = getattr(model, 'USERNAME_FIELD', 'username')
+        username_field = getattr(settings, 'LDAP_SYNC_USERNAME_FIELD', None)
+        if username_field is None:
+            username_field = getattr(model, 'USERNAME_FIELD', 'username')
+
+        if not model._meta.get_field(username_field).unique:
+            error_msg = ("Username field '%s' must be unique" % username_field)
+            raise ImproperlyConfigured(error_msg)
 
         if username_field not in attributes.values():
             error_msg = ("LDAP_SYNC_USER_ATTRIBUTES must contain the "
