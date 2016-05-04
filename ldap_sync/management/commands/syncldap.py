@@ -5,7 +5,7 @@ from ldap.ldapobject import LDAPObject
 from ldap.controls import SimplePagedResultsControl
 
 from django.conf import settings
-from django.core.management.base import NoArgsCommand
+from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ImproperlyConfigured
@@ -16,10 +16,11 @@ from django.db import IntegrityError
 logger = logging.getLogger(__name__)
 
 
-class Command(NoArgsCommand):
+class Command(BaseCommand):
+    can_import_settings = True
     help = 'Synchronize users and groups from an authoritative LDAP server'
 
-    def handle_noargs(self, **options):
+    def handle(self, *args, **options):
         ldap_groups = self.get_ldap_groups()
         if ldap_groups:
             self.sync_ldap_groups(ldap_groups)
