@@ -60,26 +60,25 @@ class Command(BaseCommand):
             raise ImproperlyConfigured(error_msg)
 
         for cname, ldap_attributes in ldap_users:
-            model_attributes = {}
+            defaults = {}
             try:
                 for name, attribute in ldap_attributes.items():
-                    model_attributes[user_attributes[name]] = attribute[0].decode('utf-8')
+                    defaults[user_attributes[name]] = attribute[0].decode('utf-8')
             except AttributeError:
                 # In some cases attrs is a list instead of a dict; skip these invalid users
                 continue
 
             try:
-                username = model_attributes[username_field]
+                username = defaults[username_field]
             except KeyError:
                 logger.warning("User is missing a required attribute '%s'" % username_field)
                 continue
 
             kwargs = {
                 username_field + '__iexact': username,
-                'defaults': model_attributes,
+                'defaults': defaults,
             }
 
-            # Create or update user data in the local database
             try:
                 user, created = model.objects.get_or_create(**kwargs)
             except (IntegrityError, DataError) as e:
@@ -90,7 +89,7 @@ class Command(BaseCommand):
                     logger.debug("Created user %s" % username)
                     user.set_unusable_password()
                 else:
-                    for name, attr in model_attributes.items():
+                    for name, attr in defaults.items():
                         current_attr = getattr(user, name, None)
                         if current_attr and current_attr != attr:
                             setattr(user, name, attr)
@@ -124,10 +123,10 @@ class Command(BaseCommand):
             raise ImproperlyConfigured(error_msg)
 
         for cname, ldap_attributes in ldap_groups:
-            model_attributes = {}
+            defaults = {}
             try:
                 for name, attribute in ldap_attributes.items():
-                    model_attributes[group_attributes[name]] = attribute[0].decode('utf-8')
+                    defaults[group_attributes[name]] = attribute[0].decode('utf-8')
             except AttributeError:
                 # In some cases attrs is a list instead of a dict; skip these invalid groups
                 continue
@@ -140,10 +139,9 @@ class Command(BaseCommand):
 
             kwargs = {
                 groupname_field + '__iexact': groupname,
-                'defaults': model_attributes,
+                'defaults': defaults,
             }
 
-            # Create group in the local database
             try:
                 group, created = Group.objects.get_or_create(**kwargs)
             except (IntegrityError, DataError) as e:
