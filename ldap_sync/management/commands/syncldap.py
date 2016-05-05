@@ -85,18 +85,17 @@ class Command(BaseCommand):
             except (IntegrityError, DataError) as e:
                 logger.error("Error creating user %s: %s" % (username, e))
             else:
-                update_fields = []
+                updated = False
                 if created:
                     logger.debug("Created user %s" % username)
                     user.set_unusable_password()
-                    update_fields.append('password')
                 else:
                     for name, attr in model_attributes.items():
-                        current_attr = getattr(user, name)
-                        if current_attr != attr:
+                        current_attr = getattr(user, name, None)
+                        if current_attr and current_attr != attr:
                             setattr(user, name, attr)
-                            update_fields.append(name)
-                user.save(update_fields=update_fields)
+                            updated = True
+                user.save()
 
         logger.info("Users are synchronized")
 
