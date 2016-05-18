@@ -11,6 +11,7 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import ImproperlyConfigured
 from django.db import DataError
 from django.db import IntegrityError
+from django.utils.module_loading import import_string
 
 
 logger = logging.getLogger(__name__)
@@ -100,6 +101,12 @@ class Command(BaseCommand):
                             updated = True
                     if updated:
                         logger.debug("Updated user %s" % username)
+
+                callbacks = list(getattr(settings, 'LDAP_SYNC_USER_CALLBACKS', []))
+                for path in callbacks:
+                    callback = import_string(path)
+                    user = callback(user, created, updated)
+
                 user.save()
 
                 if removed_user_action in ['DEACTIVATE', 'DELETE']:
