@@ -64,17 +64,17 @@ class Command(BaseCommand):
             error_msg = ("LDAP_SYNC_USER_ATTRIBUTES must contain the field '%s'" % username_field)
             raise ImproperlyConfigured(error_msg)
 
-        for cname, ldap_attributes in ldap_users:
+        for cname, attributes in ldap_users:
             defaults = {}
             try:
-                for name, attribute in ldap_attributes.items():
+                for name, attribute in attributes.items():
                     defaults[user_attributes[name]] = attribute[0].decode('utf-8')
             except AttributeError:
-                # In some cases attrs is a list instead of a dict; skip these invalid users
+                # In some cases attributes is a list instead of a dict; skip these invalid users
                 continue
 
             try:
-                username = defaults[username_field]
+                username = defaults[username_field].lower()
             except KeyError:
                 logger.warning("User is missing a required attribute '%s'" % username_field)
                 continue
