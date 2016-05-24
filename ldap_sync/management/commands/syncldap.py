@@ -52,9 +52,8 @@ class Command(BaseCommand):
         username_field = getattr(settings, 'LDAP_SYNC_USERNAME_FIELD', None)
         if username_field is None:
             username_field = getattr(model, 'USERNAME_FIELD', 'username')
-        removed_user_action = getattr(settings, 'LDAP_SYNC_REMOVED_USER_ACTION', 'KEEP')
-        if removed_user_action not in ['KEEP', 'DEACTIVATE', 'DELETE']:
-            raise ImproperlyConfigured('Invalid option specified for LDAP_SYNC_REMOVED_USER_ACTION')
+        user_callbacks = list(getattr(settings, 'LDAP_SYNC_USER_CALLBACKS', []))
+        removed_user_callbacks = list(getattr(settings, 'LDAP_SYNC_REMOVED_USER_CALLBACKS', []))
         ldap_usernames = set()
 
         if not model._meta.get_field(username_field).unique:
@@ -102,28 +101,23 @@ class Command(BaseCommand):
                     if updated:
                         logger.debug("Updated user %s" % username)
 
-                callbacks = list(getattr(settings, 'LDAP_SYNC_USER_CALLBACKS', []))
-                for path in callbacks:
+                for path in user_callbacks:
                     callback = import_string(path)
                     user = callback(user, created, updated)
 
                 user.save()
 
-                if removed_user_action in ['DEACTIVATE', 'DELETE']:
+                if removed_user_callbacks:
                     ldap_usernames.add(username)
 
-        if removed_user_action in ['DEACTIVATE', 'DELETE']:
+        if removed_user_callbacks:
             django_usernames = set(model.objects.values_list(username_field, flat=True))
-
             for username in django_usernames - ldap_usernames:
                 user = model.objects.get(**{username_field: username})
-                if removed_user_action == 'DEACTIVATE':
-                    user.is_active = False
-                    user.save()
-                    logger.debug("Deactivated user %s" % username)
-                elif removed_user_action == 'DELETE':
-                    user.delete()
-                    logger.debug("Deleted user %s" % username)
+                for path in removed_user_callbacks:
+                    callback = import_string(path)
+                    callback(user)
+                    logger.debug("Called %s for user %s" % (path, username))
 
         logger.info("Users are synchronized")
 
