@@ -95,7 +95,7 @@ class Command(BaseCommand):
                 else:
                     for name, attr in defaults.items():
                         current_attr = getattr(user, name, None)
-                        if current_attr and current_attr != attr:
+                        if current_attr != attr:
                             setattr(user, name, attr)
                             updated = True
                     if updated:
