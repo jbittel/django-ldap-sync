@@ -73,6 +73,27 @@ Settings
           "mail": "email",
       }
 
+.. attribute:: LDAP_SYNC_USER_CALLBACKS
+
+   :default: ``[]``
+
+   A list of dotted paths to callback functions that will be called for each user
+   added or updated. Each callback function is passed three parameters: the user
+   object, a created flag and an updated flag.
+
+.. attribute:: LDAP_SYNC_REMOVED_USER_CALLBACKS
+
+   :default: ``[]``
+
+   A list of dotted paths to callback functions that will be called for each user
+   found to be removed. Each callback function is passed a single parameter of the
+   user object. Note that if changes are made to the user object, it will need to
+   be explicitly saved within the callback function.
+
+   Two callback functions are included, providing common functionality:
+   ``ldap_sync.callbacks.removed_user_deactivate`` and ``ldap_sync.callbacks.removed_user_delete``
+   which deactivate and delete the given user, respectively.
+
 .. attribute:: LDAP_SYNC_USERNAME_FIELD
 
    :default: ``None``
