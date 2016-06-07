@@ -6,6 +6,9 @@ Changelog
 These are the notable changes for each django-ldap-sync release. For
 additional detail, read the complete `commit history`_.
 
+**django-ldap-sync 0.3.1**
+   * Fix packaging error
+
 **django-ldap-sync 0.3.0**
    * Add a setting to override the username field
    * Add handling of removed users
