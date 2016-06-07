@@ -3,13 +3,15 @@
 from setuptools import find_packages
 from setuptools import setup
 
+from ldap_sync import __version__ as version
+
 
 with open('README.rst') as f:
     readme = f.read()
 
 setup(
     name='django-ldap-sync',
-    version='0.2.0',
+    version=version,
     description='A Django application for synchronizing LDAP users and groups',
     long_description=readme,
     license='BSD',
