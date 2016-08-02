@@ -155,7 +155,7 @@ class Command(BaseCommand):
                 continue
 
             try:
-                groupname = group_attr[groupname_field]
+                groupname = defaults[groupname_field]
             except KeyError:
                 logger.warning("Group is missing a required attribute '%s'" % groupname_field)
                 continue
