@@ -109,7 +109,7 @@ class Command(BaseCommand):
 
                 for path in user_callbacks:
                     callback = import_string(path)
-                    user = callback(user, attributes, created, updated)
+                    callback(user, attributes, created, updated)
 
                 user.save()
 
