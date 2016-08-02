@@ -40,8 +40,11 @@ class Command(BaseCommand):
         user_attributes = getattr(settings, 'LDAP_SYNC_USER_ATTRIBUTES', {})
         if not user_attributes:
             raise ImproperlyConfigured('LDAP_SYNC_USER_ATTRIBUTES must be specified in your Django settings')
+        user_keys = set(user_attributes.keys())
+        user_extra_attributes = getattr(settings, 'LDAP_SYNC_USER_EXTRA_ATTRIBUTES', [])
+        user_keys.update(user_extra_attributes)
 
-        users = self.ldap_search(user_filter, user_attributes.keys())
+        users = self.ldap_search(user_filter, user_keys)
         logger.debug("Retrieved %d users" % len(users))
         return users
 
@@ -67,7 +70,10 @@ class Command(BaseCommand):
             defaults = {}
             try:
                 for name, attribute in attributes.items():
-                    defaults[user_attributes[name]] = attribute[0].decode('utf-8')
+                    try:
+                        defaults[user_attributes[name]] = attribute[0].decode('utf-8')
+                    except KeyError:
+                        pass
             except AttributeError:
                 # In some cases attributes is a list instead of a dict; skip these invalid users
                 continue
@@ -103,7 +109,7 @@ class Command(BaseCommand):
 
                 for path in user_callbacks:
                     callback = import_string(path)
-                    user = callback(user, created, updated)
+                    user = callback(user, attributes, created, updated)
 
                 user.save()
 
