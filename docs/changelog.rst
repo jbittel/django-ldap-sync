@@ -6,6 +6,12 @@ Changelog
 These are the notable changes for each django-ldap-sync release. For
 additional detail, read the complete `commit history`_.
 
+**django-ldap-sync 0.4.0**
+   * Fix error when synchronizing groups
+   * Add setting to retrieve additional LDAP attributes
+   * Pass attributes to user callback functions
+   * Add example callback for disabling users with AD userAccountControl
+
 **django-ldap-sync 0.3.2**
    * Fix packaging errors
 
