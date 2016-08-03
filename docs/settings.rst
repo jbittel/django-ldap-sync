@@ -81,6 +81,14 @@ Settings
    added or updated. Each callback function is passed three parameters: the user
    object, a created flag and an updated flag.
 
+.. attribute:: LDAP_SYNC_USER_EXTRA_ATTRIBUTES
+
+   :default: ``[]``
+
+   A list of additional LDAP field names to retrieve. These attributes are not
+   updated on user accounts, but are passed to user callback functions for
+   additional processing.
+
 .. attribute:: LDAP_SYNC_REMOVED_USER_CALLBACKS
 
    :default: ``[]``
