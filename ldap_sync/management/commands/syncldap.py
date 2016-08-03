@@ -34,7 +34,7 @@ class Command(BaseCommand):
         """Retrieve user data from LDAP server."""
         user_filter = getattr(settings, 'LDAP_SYNC_USER_FILTER', None)
         if not user_filter:
-            logger.info('LDAP_SYNC_USER_FILTER not configured, skipping user sync')
+            logger.debug('LDAP_SYNC_USER_FILTER not configured, skipping user sync')
             return None
 
         user_attributes = getattr(settings, 'LDAP_SYNC_USER_ATTRIBUTES', {})
@@ -131,7 +131,7 @@ class Command(BaseCommand):
         """Retrieve groups from LDAP server."""
         group_filter = getattr(settings, 'LDAP_SYNC_GROUP_FILTER', None)
         if not group_filter:
-            logger.info('LDAP_SYNC_GROUP_FILTER not configured, skipping group sync')
+            logger.debug('LDAP_SYNC_GROUP_FILTER not configured, skipping group sync')
             return None
 
         group_attributes = getattr(settings, 'LDAP_SYNC_GROUP_ATTRIBUTES', {})
