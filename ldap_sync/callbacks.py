@@ -1,6 +1,6 @@
-def user_active_directory_deactivate(user, attributes, created, updated):
+def user_active_directory_enabled(user, attributes, created, updated):
     """
-    Deactivate user accounts based on Active Directory's
+    Activate/deactivate user accounts based on Active Directory's
     userAccountControl flags. Requires 'userAccountControl'
     to be included in LDAP_SYNC_USER_EXTRA_ATTRIBUTES.
     """
@@ -8,6 +8,8 @@ def user_active_directory_deactivate(user, attributes, created, updated):
         user_account_control = int(attributes['userAccountControl'][0])
         if user_account_control & 2:
             user.is_active = False
+        else:
+            user.is_active = True
     except KeyError:
         pass
 
