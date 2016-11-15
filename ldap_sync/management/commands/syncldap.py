@@ -67,15 +67,14 @@ class Command(BaseCommand):
 
         for cname, attributes in ldap_users:
             defaults = {}
-            try:
-                for name, attribute in attributes.items():
-                    try:
-                        defaults[user_attributes[name]] = attribute[0].decode('utf-8')
-                    except KeyError:
-                        pass
-            except AttributeError:
-                # In some cases attributes is a list instead of a dict; skip these invalid users
-                continue
+            for ldap_name, field in user_attributes.items():
+                try:
+                    defaults[field] = attributes[ldap_name][0].decode('utf-8')
+                except KeyError:
+                    defaults[field] = ''
+                except TypeError:
+                    # In some cases attributes is a list instead of a dict; skip these invalid users
+                    continue
 
             try:
                 username = defaults[username_field].lower()
