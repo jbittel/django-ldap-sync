@@ -62,26 +62,22 @@ class Command(BaseCommand):
             raise ImproperlyConfigured("Field '%s' must be unique" % username_field)
 
         if username_field not in user_attributes.values():
-            error_msg = ("LDAP_SYNC_USER_ATTRIBUTES must contain the field '%s'" % username_field)
-            raise ImproperlyConfigured(error_msg)
+            raise ImproperlyConfigured("LDAP_SYNC_USER_ATTRIBUTES must contain the field '%s'" % username_field)
 
         for cname, attributes in ldap_users:
             defaults = {}
+
+            if not isinstance(attributes, dict):
+                # In some cases attributes is not a dict; skip these invalid users
+                continue
+
             for ldap_name, field in user_attributes.items():
                 try:
                     defaults[field] = attributes[ldap_name][0].decode('utf-8')
                 except KeyError:
                     defaults[field] = ''
-                except TypeError:
-                    # In some cases attributes is a list instead of a dict; skip these invalid users
-                    continue
 
-            try:
-                username = defaults[username_field].lower()
-            except KeyError:
-                logger.warning("User is missing a required attribute '%s'" % username_field)
-                continue
-
+            username = defaults[username_field].lower()
             kwargs = {
                 username_field + '__iexact': username,
                 'defaults': defaults,
