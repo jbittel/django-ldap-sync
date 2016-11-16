@@ -64,16 +64,16 @@ class Command(BaseCommand):
         if username_field not in user_attributes.values():
             raise ImproperlyConfigured("LDAP_SYNC_USER_ATTRIBUTES must contain the field '%s'" % username_field)
 
-        for cname, attributes in ldap_users:
+        for cname, ldap_attributes in ldap_users:
             defaults = {}
 
-            if not isinstance(attributes, dict):
+            if not isinstance(ldap_attributes, dict):
                 # In some cases attributes is not a dict; skip these invalid users
                 continue
 
             for ldap_name, field in user_attributes.items():
                 try:
-                    defaults[field] = attributes[ldap_name][0].decode('utf-8')
+                    defaults[field] = ldap_attributes[ldap_name][0].decode('utf-8')
                 except KeyError:
                     defaults[field] = ''
 
@@ -103,7 +103,7 @@ class Command(BaseCommand):
 
                 for path in user_callbacks:
                     callback = import_string(path)
-                    callback(user, attributes, created, updated)
+                    callback(user, ldap_attributes, created, updated)
 
                 user.save()
 
@@ -140,24 +140,22 @@ class Command(BaseCommand):
         groupname_field = 'name'
 
         if groupname_field not in group_attributes.values():
-            error_msg = "LDAP_SYNC_GROUP_ATTRIBUTES must contain the field '%s'" % groupname_field
-            raise ImproperlyConfigured(error_msg)
+            raise ImproperlyConfigured("LDAP_SYNC_GROUP_ATTRIBUTES must contain the field '%s'" % groupname_field)
 
         for cname, ldap_attributes in ldap_groups:
             defaults = {}
-            try:
-                for name, attribute in ldap_attributes.items():
-                    defaults[group_attributes[name]] = attribute[0].decode('utf-8')
-            except AttributeError:
-                # In some cases attrs is a list instead of a dict; skip these invalid groups
+
+            if not isinstance(ldap_attributes, dict):
+                # In some cases attrs is not a dict; skip these invalid groups
                 continue
 
-            try:
-                groupname = defaults[groupname_field]
-            except KeyError:
-                logger.warning("Group is missing a required attribute '%s'" % groupname_field)
-                continue
+            for ldap_name, field in group_attributes.items():
+                try:
+                    defaults[field] = group_attributes[ldap_name][0].decode('utf-8')
+                except KeyError:
+                    defaults[field] = ''
 
+            groupname = defaults[groupname_field]
             kwargs = {
                 groupname_field + '__iexact': groupname,
                 'defaults': defaults,
