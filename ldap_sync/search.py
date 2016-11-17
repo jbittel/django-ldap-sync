@@ -64,8 +64,9 @@ class PagedResultsSearchObject:
         req_ctrl = SimplePagedResultsControl(True, size=self.page_size, cookie='')
 
         # Send first search request
-        msgid = self.search_ext(base, ldap.SCOPE_SUBTREE, filterstr, attrlist=attrlist,
-                                serverctrls=(serverctrls or []) + [req_ctrl])
+        msgid = self.search_ext(base, scope, filterstr=filterstr, attrlist=attrlist, attrsonly=attrsonly,
+                                serverctrls=(serverctrls or []) + [req_ctrl], clientctrls=clientctrls,
+                                timeout=timeout, sizelimit=sizelimit)
         results = []
 
         while True:
@@ -78,8 +79,9 @@ class PagedResultsSearchObject:
                 if pctrls[0].cookie:
                     # Copy cookie from response control to request control
                     req_ctrl.cookie = pctrls[0].cookie
-                    msgid = self.search_ext(base, ldap.SCOPE_SUBTREE, filterstr, attrlist=attrlist,
-                                            serverctrls=(serverctrls or []) + [req_ctrl])
+                    msgid = self.search_ext(base, scope, filterstr=filterstr, attrlist=attrlist, attrsonly=attrsonly,
+                                            serverctrls=(serverctrls or []) + [req_ctrl], clientctrls=clientctrls,
+                                            timeout=timeout, sizelimit=sizelimit)
                 else:
                     break
 
