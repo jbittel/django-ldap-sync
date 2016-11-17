@@ -18,37 +18,68 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     can_import_settings = True
     help = 'Synchronize users and groups from an authoritative LDAP server'
-    ldap = LDAPSearch()
 
     def handle(self, *args, **options):
-        ldap_groups = self.get_ldap_groups()
-        if ldap_groups:
+        ldap = LDAPSearch()
+
+        group_filter = get_setting('LDAP_SYNC_GROUP_FILTER')
+        if group_filter:
+            group_attributes = get_setting('LDAP_SYNC_GROUP_ATTRIBUTES', strict=True)
+            ldap_groups = ldap.search(group_filter, group_attributes.keys())
             self.sync_ldap_groups(ldap_groups)
 
-        ldap_users = self.get_ldap_users()
-        if ldap_users:
+        user_filter = get_setting('LDAP_SYNC_USER_FILTER')
+        if user_filter:
+            user_attributes = get_setting('LDAP_SYNC_USER_ATTRIBUTES', strict=True)
+            user_attributes_keys = set(user_attributes.keys())
+            user_extra_attributes = get_setting('LDAP_SYNC_USER_EXTRA_ATTRIBUTES', default=[])
+            user_attributes_keys.update(user_extra_attributes)
+            ldap_users = ldap.search(user_filter, user_attributes_keys)
             self.sync_ldap_users(ldap_users)
 
-    def get_ldap_users(self):
-        """Retrieve user data from LDAP server."""
-        user_filter = get_setting('LDAP_SYNC_USER_FILTER')
-        if not user_filter:
-            logger.debug('LDAP_SYNC_USER_FILTER not configured, skipping user sync')
-            return None
+        ldap.unbind()
 
-        user_attributes = get_setting('LDAP_SYNC_USER_ATTRIBUTES', strict=True)
-        user_keys = set(user_attributes.keys())
-        user_extra_attributes = get_setting('LDAP_SYNC_USER_EXTRA_ATTRIBUTES', default=[])
-        user_keys.update(user_extra_attributes)
+    def sync_ldap_groups(self, ldap_groups):
+        """Synchronize LDAP groups with local group model."""
+        group_attributes = get_setting('LDAP_SYNC_GROUP_ATTRIBUTES', strict=True)
+        groupname_field = 'name'
 
-        users = self.ldap.search(user_filter, user_keys)
-        logger.debug("Retrieved %d users" % len(users))
-        return users
+        if groupname_field not in group_attributes.values():
+            raise ImproperlyConfigured("LDAP_SYNC_GROUP_ATTRIBUTES must contain the field '%s'" % groupname_field)
+
+        for cname, ldap_attributes in ldap_groups:
+            defaults = {}
+
+            if not isinstance(ldap_attributes, dict):
+                # In some cases attrs is not a dict; skip these invalid groups
+                continue
+
+            for ldap_name, field in group_attributes.items():
+                try:
+                    defaults[field] = group_attributes[ldap_name][0].decode('utf-8')
+                except KeyError:
+                    defaults[field] = ''
+
+            groupname = defaults[groupname_field]
+            kwargs = {
+                groupname_field + '__iexact': groupname,
+                'defaults': defaults,
+            }
+
+            try:
+                group, created = Group.objects.get_or_create(**kwargs)
+            except (IntegrityError, DataError) as e:
+                logger.error("Error creating group %s: %s" % (groupname, e))
+            else:
+                if created:
+                    logger.debug("Created group %s" % groupname)
+
+        logger.info("Groups are synchronized")
 
     def sync_ldap_users(self, ldap_users):
         """Synchronize users with local user model."""
         model = get_user_model()
-        user_attributes = get_setting('LDAP_SYNC_USER_ATTRIBUTES')
+        user_attributes = get_setting('LDAP_SYNC_USER_ATTRIBUTES', strict=True)
         username_field = get_setting('LDAP_SYNC_USERNAME_FIELD')
         if username_field is None:
             username_field = getattr(model, 'USERNAME_FIELD', 'username')
@@ -118,53 +149,3 @@ class Command(BaseCommand):
                     logger.debug("Called %s for user %s" % (path, username))
 
         logger.info("Users are synchronized")
-
-    def get_ldap_groups(self):
-        """Retrieve groups from LDAP server."""
-        group_filter = get_setting('LDAP_SYNC_GROUP_FILTER')
-        if not group_filter:
-            logger.debug('LDAP_SYNC_GROUP_FILTER not configured, skipping group sync')
-            return None
-
-        group_attributes = get_setting('LDAP_SYNC_GROUP_ATTRIBUTES', strict=True)
-
-        groups = self.ldap.search(group_filter, group_attributes.keys())
-        logger.debug("Retrieved %d groups" % len(groups))
-        return groups
-
-    def sync_ldap_groups(self, ldap_groups):
-        """Synchronize LDAP groups with local group model."""
-        group_attributes = get_setting('LDAP_SYNC_GROUP_ATTRIBUTES')
-        groupname_field = 'name'
-
-        if groupname_field not in group_attributes.values():
-            raise ImproperlyConfigured("LDAP_SYNC_GROUP_ATTRIBUTES must contain the field '%s'" % groupname_field)
-
-        for cname, ldap_attributes in ldap_groups:
-            defaults = {}
-
-            if not isinstance(ldap_attributes, dict):
-                # In some cases attrs is not a dict; skip these invalid groups
-                continue
-
-            for ldap_name, field in group_attributes.items():
-                try:
-                    defaults[field] = group_attributes[ldap_name][0].decode('utf-8')
-                except KeyError:
-                    defaults[field] = ''
-
-            groupname = defaults[groupname_field]
-            kwargs = {
-                groupname_field + '__iexact': groupname,
-                'defaults': defaults,
-            }
-
-            try:
-                group, created = Group.objects.get_or_create(**kwargs)
-            except (IntegrityError, DataError) as e:
-                logger.error("Error creating group %s: %s" % (groupname, e))
-            else:
-                if created:
-                    logger.debug("Created group %s" % groupname)
-
-        logger.info("Groups are synchronized")

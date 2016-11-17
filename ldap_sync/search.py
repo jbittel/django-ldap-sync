@@ -21,11 +21,11 @@ class LDAPSearch(object):
 
     def _get_ldap(self):
         if self._ldap is None:
-            self._ldap = self.connect()
+            self._ldap = self.bind()
         return self._ldap
     ldap = property(_get_ldap)
 
-    def connect(self):
+    def bind(self):
         ldap.set_option(ldap.OPT_REFERRALS, 0)
         l = PagedLDAPObject(self.uri)
         l.protocol_version = 3
@@ -36,15 +36,12 @@ class LDAPSearch(object):
             raise
         return l
 
-    def disconnect(self):
+    def unbind(self):
         self.ldap.unbind_s()
         self._ldap = None
 
     def search(self, filterstr, attrlist):
-        """
-        Query the configured LDAP server with the provided search filter and
-        attribute list.
-        """
+        """Query the configured LDAP server."""
         return self.ldap.paged_search_ext_s(self.base, ldap.SCOPE_SUBTREE, filterstr, attrlist)
 
 
