@@ -110,7 +110,12 @@ class Command(BaseCommand):
                     callback = import_string(path)
                     callback(user, ldap_attributes, created, updated)
 
-                user.save()
+                # It's possible for an IntegrityError to occur here
+                # due to user modifications made by callbacks
+                try:
+                    user.save()
+                except IntegrityError as e:
+                    logger.error("Error updating user %s: %s" % (username, e))
 
                 if self.settings.REMOVED_USER_CALLBACKS:
                     ldap_usernames.add(username)
