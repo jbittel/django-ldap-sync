@@ -9,4 +9,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         sync_ldap = SyncLDAP()
-        sync_ldap.sync()
+        sync_ldap.sync_groups()
+        sync_ldap.sync_users()

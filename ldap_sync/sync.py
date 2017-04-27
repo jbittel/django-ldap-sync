@@ -13,24 +13,34 @@ logger = logging.getLogger(__name__)
 
 
 class SyncLDAP(object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         self.settings = SyncSettings()
         self.ldap = LDAPSearch(self.settings)
 
+    def __del__(self):
+        self.ldap.unbind()
+
     def sync(self):
+        """Wrapper method to sync both groups and users."""
+        self.sync_groups()
+        self.sync_users()
+
+    def sync_groups(self):
+        """Synchronize LDAP groups with local group model."""
         if self.settings.GROUP_FILTER:
             ldap_groups = self.ldap.search(self.settings.GROUP_FILTER, self.settings.GROUP_ATTRIBUTES.keys())
-            self.sync_ldap_groups(ldap_groups)
+            self._sync_ldap_groups(ldap_groups)
+            logger.info("Groups are synchronized")
 
+    def sync_users(self):
+        """Synchronize LDAP users with local user model."""
         if self.settings.USER_FILTER:
             user_attributes = self.settings.USER_ATTRIBUTES.keys() + self.settings.USER_EXTRA_ATTRIBUTES
             ldap_users = self.ldap.search(self.settings.USER_FILTER, user_attributes)
-            self.sync_ldap_users(ldap_users)
+            self._sync_ldap_users(ldap_users)
+            logger.info("Users are synchronized")
 
-        self.ldap.unbind()
-
-    def sync_ldap_groups(self, ldap_groups):
-        """Synchronize LDAP groups with local group model."""
+    def _sync_ldap_groups(self, ldap_groups):
         for cname, ldap_attributes in ldap_groups:
             defaults = {}
 
@@ -58,10 +68,7 @@ class SyncLDAP(object):
                 if created:
                     logger.debug("Created group %s" % groupname)
 
-        logger.info("Groups are synchronized")
-
-    def sync_ldap_users(self, ldap_users):
-        """Synchronize users with local user model."""
+    def _sync_ldap_users(self, ldap_users):
         ldap_usernames = set()
 
         for cname, ldap_attributes in ldap_users:
@@ -123,5 +130,3 @@ class SyncLDAP(object):
                     callback = import_string(path)
                     callback(user)
                     logger.debug("Called %s for user %s" % (path, username))
-
-        logger.info("Users are synchronized")
