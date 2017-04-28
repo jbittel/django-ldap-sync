@@ -14,11 +14,14 @@ class LDAPSearch(object):
     def __init__(self, settings):
         self.settings = settings
 
-    def _get_ldap(self):
+    def __del__(self):
+        self.unbind()
+
+    @property
+    def ldap(self):
         if self._ldap is None:
             self._ldap = self.bind()
         return self._ldap
-    ldap = property(_get_ldap)
 
     def bind(self):
         ldap.set_option(ldap.OPT_REFERRALS, 0)
@@ -32,8 +35,9 @@ class LDAPSearch(object):
         return l
 
     def unbind(self):
-        self.ldap.unbind_s()
-        self._ldap = None
+        if self._ldap is not None:
+            self.ldap.unbind_s()
+            self._ldap = None
 
     def search(self, filterstr, attrlist):
         """Query the configured LDAP server."""

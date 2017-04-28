@@ -13,12 +13,22 @@ logger = logging.getLogger(__name__)
 
 
 class SyncLDAP(object):
-    def __init__(self):
-        self.settings = SyncSettings()
-        self.ldap = LDAPSearch(self.settings)
+    _ldap = None
+    _settings = None
 
-    def __del__(self):
-        self.ldap.unbind()
+    settings_prefix = 'LDAP_SYNC_'
+
+    @property
+    def ldap(self):
+        if self._ldap is None:
+            self._ldap = LDAPSearch(self.settings)
+        return self._ldap
+
+    @property
+    def settings(self):
+        if self._settings is None:
+            self._settings = SyncSettings(prefix=self.settings_prefix)
+        return self._settings
 
     def sync(self):
         """Wrapper method to sync both groups and users."""

@@ -23,10 +23,10 @@ class SyncSettings(object):
         'PAGE_SIZE': 100,
     }
 
-    def __init__(self):
+    def __init__(self, prefix='LDAP_SYNC_'):
         """Load settings from Django configuration."""
         for name, default in self.defaults.items():
-            value = getattr(settings, 'LDAP_SYNC_' + name, default)
+            value = getattr(settings, prefix + name, default)
             setattr(self, name, value)
 
         self.validate()
