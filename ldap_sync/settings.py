@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
 
 
-class SyncSettings(object):
+class LDAPSettings(object):
     """Centralize defaults and validation for settings."""
     model = get_user_model()
     defaults = {

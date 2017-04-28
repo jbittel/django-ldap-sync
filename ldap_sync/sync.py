@@ -6,7 +6,7 @@ from django.db import IntegrityError
 from django.utils.module_loading import import_string
 
 from ldap_sync.search import LDAPSearch
-from ldap_sync.settings import SyncSettings
+from ldap_sync.settings import LDAPSettings
 
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class SyncLDAP(object):
     @property
     def settings(self):
         if self._settings is None:
-            self._settings = SyncSettings(prefix=self.settings_prefix)
+            self._settings = LDAPSettings(prefix=self.settings_prefix)
         return self._settings
 
     def sync(self):
