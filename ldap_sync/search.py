@@ -26,7 +26,7 @@ class LDAPSearch(object):
     def bind(self):
         ldap.set_option(ldap.OPT_REFERRALS, 0)
         l = PagedLDAPObject(self.settings.URI)
-        l.protocol_version = 3
+        l.protocol_version = ldap.VERSION3
         try:
             l.simple_bind_s(self.settings.BASE_USER, self.settings.BASE_PASS)
         except ldap.LDAPError as e:
