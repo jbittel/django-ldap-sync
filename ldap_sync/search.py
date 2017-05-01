@@ -30,7 +30,7 @@ class LDAPSearch(object):
         try:
             l.simple_bind_s(self.settings.BASE_USER, self.settings.BASE_PASS)
         except ldap.LDAPError as e:
-            logger.error("Error connecting to %s: %s" % (self.uri, e))
+            logger.error("Error connecting to %s: %s" % (self.settings.URI, e))
             raise
         return l
 
