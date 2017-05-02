@@ -14,15 +14,15 @@ class LDAPSearch(object):
         self.settings = settings
 
     def __del__(self):
-        self.unbind()
+        self._unbind()
 
     @property
     def ldap(self):
         if self._ldap is None:
-            self._ldap = self.bind()
+            self._ldap = self._bind()
         return self._ldap
 
-    def bind(self):
+    def _bind(self):
         ldap.set_option(ldap.OPT_REFERRALS, 0)
         l = ldap.initialize(self.settings.URI)
         l.protocol_version = ldap.VERSION3
@@ -33,7 +33,7 @@ class LDAPSearch(object):
             raise
         return l
 
-    def unbind(self):
+    def _unbind(self):
         if self._ldap is not None:
             self.ldap.unbind_s()
             self._ldap = None
