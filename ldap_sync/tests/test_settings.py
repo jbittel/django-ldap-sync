@@ -9,10 +9,10 @@ class SettingsTests(TestCase):
     def test_get_settings(self):
         """The settings object should contain all configured settings."""
         settings = LDAPSettings()
-        self.assertEqual(settings.URI, 'ldap://ldap.example.com:389')
-        self.assertEqual(settings.BASE_USER, 'CN=Sync,CN=Users,DC=example,DC=com')
-        self.assertEqual(settings.BASE_PASS, 'passw0rd')
-        self.assertEqual(settings.BASE, 'DC=example,DC=com')
+        self.assertEqual(settings.URI, 'ldap://localhost')
+        self.assertEqual(settings.BASE_USER, 'cn=alice,ou=example,o=test')
+        self.assertEqual(settings.BASE_PASS, 'alicepw')
+        self.assertEqual(settings.BASE, 'o=test')
         self.assertEqual(settings.USER_FILTER, 'objectCategory=person')
 
     @override_settings(LDAP_SYNC_GROUP_ATTRIBUTES={'departmentName': 'department'})

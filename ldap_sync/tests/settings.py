@@ -25,10 +25,10 @@ INSTALLED_APPS = (
     'ldap_sync',
 )
 
-LDAP_SYNC_URI = 'ldap://ldap.example.com:389'
-LDAP_SYNC_BASE_USER = 'CN=Sync,CN=Users,DC=example,DC=com'
-LDAP_SYNC_BASE_PASS = 'passw0rd'
-LDAP_SYNC_BASE = 'DC=example,DC=com'
+LDAP_SYNC_URI = 'ldap://localhost'
+LDAP_SYNC_BASE_USER = 'cn=alice,ou=example,o=test'
+LDAP_SYNC_BASE_PASS = 'alicepw'
+LDAP_SYNC_BASE = 'o=test'
 
 LDAP_SYNC_USER_FILTER = 'objectCategory=person'
 
