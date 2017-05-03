@@ -1,5 +1,6 @@
 import unittest
 
+from django.test import override_settings
 from django.test import TestCase
 
 import ldap
@@ -46,3 +47,15 @@ class SyncTests(TestCase):
         results = self.sync.ldap.conn.search_s('ou=example,o=test', ldap.SCOPE_ONELEVEL, '(cn=*)')
         self.assertEquals(self.ldapobj.methods_called(), ['initialize', 'simple_bind_s', 'search_s'])
         self.assertEquals(sorted(results), sorted([self.manager, self.alice]))
+
+    @override_settings(LDAP_SYNC_USER_FILTER='')
+    def test_no_user_filter(self):
+        """A user sync should not be performed if no filter is provided."""
+        self.sync.sync_users()
+        self.assertEqual(self.ldapobj.methods_called(), [])
+
+    @override_settings(LDAP_SYNC_GROUP_FILTER='')
+    def test_no_group_filter(self):
+        """A group sync should not be performed if no filter is provided."""
+        self.sync.sync_groups()
+        self.assertEqual(self.ldapobj.methods_called(), [])
