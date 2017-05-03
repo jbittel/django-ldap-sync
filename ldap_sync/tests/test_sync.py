@@ -43,6 +43,6 @@ class SyncTests(TestCase):
 
     def test_ldap(self):
         """The ldap property should allow access to the LDAP connection."""
-        results = self.sync.ldap.ldap.search_s('ou=example,o=test', ldap.SCOPE_ONELEVEL, '(cn=*)')
+        results = self.sync.ldap.conn.search_s('ou=example,o=test', ldap.SCOPE_ONELEVEL, '(cn=*)')
         self.assertEquals(self.ldapobj.methods_called(), ['initialize', 'simple_bind_s', 'search_s'])
         self.assertEquals(sorted(results), sorted([self.manager, self.alice]))

@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class LDAPSearch(object):
-    _ldap = None
+    _conn = None
 
     def __init__(self, settings):
         self.settings = settings
@@ -17,10 +17,10 @@ class LDAPSearch(object):
         self._unbind()
 
     @property
-    def ldap(self):
-        if self._ldap is None:
-            self._ldap = self._bind()
-        return self._ldap
+    def conn(self):
+        if self._conn is None:
+            self._conn = self._bind()
+        return self._conn
 
     def _bind(self):
         ldap.set_option(ldap.OPT_REFERRALS, 0)
@@ -34,9 +34,9 @@ class LDAPSearch(object):
         return l
 
     def _unbind(self):
-        if self._ldap is not None:
-            self.ldap.unbind_s()
-            self._ldap = None
+        if self._conn is not None:
+            self.conn.unbind_s()
+            self._conn = None
 
     def search(self, filterstr, attrlist):
         """Query the configured LDAP server."""
@@ -55,13 +55,13 @@ class LDAPSearch(object):
         request_ctrl = SimplePagedResultsControl(True, size=page_size, cookie='')
 
         # Send first search request
-        msgid = self.ldap.search_ext(base, scope, filterstr=filterstr, attrlist=attrlist, attrsonly=attrsonly,
+        msgid = self.conn.search_ext(base, scope, filterstr=filterstr, attrlist=attrlist, attrsonly=attrsonly,
                                      serverctrls=(serverctrls or []) + [request_ctrl], clientctrls=clientctrls,
                                      timeout=timeout, sizelimit=sizelimit)
         results = []
 
         while True:
-            result_type, result_data, result_msgid, result_ctrls = self.ldap.result3(msgid)
+            result_type, result_data, result_msgid, result_ctrls = self.conn.result3(msgid)
             results.extend(result_data)
 
             # Extract the simple paged results response control
@@ -70,7 +70,7 @@ class LDAPSearch(object):
             if paged_ctrls and paged_ctrls[0].cookie:
                 # Copy cookie from response control to request control
                 request_ctrl.cookie = paged_ctrls[0].cookie
-                msgid = self.ldap.search_ext(base, scope, filterstr=filterstr, attrlist=attrlist,
+                msgid = self.conn.search_ext(base, scope, filterstr=filterstr, attrlist=attrlist,
                                              attrsonly=attrsonly, serverctrls=(serverctrls or []) + [request_ctrl],
                                              clientctrls=clientctrls, timeout=timeout, sizelimit=sizelimit)
             else:
