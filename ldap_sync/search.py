@@ -52,28 +52,28 @@ class LDAPSearch(object):
         Taken from the python-ldap paged_search_ext_s.py demo, showing how to use
         the paged results control: https://bitbucket.org/jaraco/python-ldap/
         """
-        req_ctrl = SimplePagedResultsControl(True, size=page_size, cookie='')
+        request_ctrl = SimplePagedResultsControl(True, size=page_size, cookie='')
 
         # Send first search request
         msgid = self.ldap.search_ext(base, scope, filterstr=filterstr, attrlist=attrlist, attrsonly=attrsonly,
-                                     serverctrls=(serverctrls or []) + [req_ctrl], clientctrls=clientctrls,
+                                     serverctrls=(serverctrls or []) + [request_ctrl], clientctrls=clientctrls,
                                      timeout=timeout, sizelimit=sizelimit)
         results = []
 
         while True:
-            rtype, rdata, rmsgid, rctrls = self.ldap.result3(msgid)
-            results.extend(rdata)
-            # Extract the simple paged results response control
-            pctrls = [c for c in rctrls if c.controlType == SimplePagedResultsControl.controlType]
+            result_type, result_data, result_msgid, result_ctrls = self.ldap.result3(msgid)
+            results.extend(result_data)
 
-            if pctrls:
-                if pctrls[0].cookie:
-                    # Copy cookie from response control to request control
-                    req_ctrl.cookie = pctrls[0].cookie
-                    msgid = self.ldap.search_ext(base, scope, filterstr=filterstr, attrlist=attrlist,
-                                                 attrsonly=attrsonly, serverctrls=(serverctrls or []) + [req_ctrl],
-                                                 clientctrls=clientctrls, timeout=timeout, sizelimit=sizelimit)
-                else:
-                    break
+            # Extract the simple paged results response control
+            paged_ctrls = [c for c in result_ctrls if c.controlType == SimplePagedResultsControl.controlType]
+
+            if paged_ctrls and paged_ctrls[0].cookie:
+                # Copy cookie from response control to request control
+                request_ctrl.cookie = paged_ctrls[0].cookie
+                msgid = self.ldap.search_ext(base, scope, filterstr=filterstr, attrlist=attrlist,
+                                             attrsonly=attrsonly, serverctrls=(serverctrls or []) + [request_ctrl],
+                                             clientctrls=clientctrls, timeout=timeout, sizelimit=sizelimit)
+            else:
+                break
 
         return results
