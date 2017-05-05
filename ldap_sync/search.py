@@ -53,14 +53,12 @@ class LDAPSearch(object):
         the paged results control: https://bitbucket.org/jaraco/python-ldap/
         """
         request_ctrl = SimplePagedResultsControl(True, size=page_size, cookie='')
-
-        # Send first search request
-        msgid = self.conn.search_ext(base, scope, filterstr=filterstr, attrlist=attrlist, attrsonly=attrsonly,
-                                     serverctrls=(serverctrls or []) + [request_ctrl], clientctrls=clientctrls,
-                                     timeout=timeout, sizelimit=sizelimit)
         results = []
 
         while True:
+            msgid = self.conn.search_ext(base, scope, filterstr=filterstr, attrlist=attrlist, attrsonly=attrsonly,
+                                         serverctrls=(serverctrls or []) + [request_ctrl], clientctrls=clientctrls,
+                                         timeout=timeout, sizelimit=sizelimit)
             result_type, result_data, result_msgid, result_ctrls = self.conn.result3(msgid)
             results.extend(result_data)
 
@@ -70,9 +68,6 @@ class LDAPSearch(object):
             if paged_ctrls and paged_ctrls[0].cookie:
                 # Copy cookie from response control to request control
                 request_ctrl.cookie = paged_ctrls[0].cookie
-                msgid = self.conn.search_ext(base, scope, filterstr=filterstr, attrlist=attrlist,
-                                             attrsonly=attrsonly, serverctrls=(serverctrls or []) + [request_ctrl],
-                                             clientctrls=clientctrls, timeout=timeout, sizelimit=sizelimit)
             else:
                 break
 
