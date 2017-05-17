@@ -6,6 +6,13 @@ Changelog
 These are the notable changes for each django-ldap-sync release. For
 additional detail, read the complete `commit history`_.
 
+**django-ldap-sync 0.5.0**
+   * Handle IntegrityError when saving users
+   * Fix error string reference to LDAP URI
+   * Pass search parameters to all search requests
+   * Add initial test suite
+   * Significant internal refactoring
+
 **django-ldap-sync 0.4.3**
    * Fix empty attribute values not being cleared
 
