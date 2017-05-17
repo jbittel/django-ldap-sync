@@ -8,7 +8,7 @@ Prerequisites
 
 django-ldap-sync |version| has two required prerequisites:
 
-   * `Django`_ 1.5 or later
+   * `Django`_ 1.8 or later
    * `python-ldap`_ 2.4.13 or later
 
 The automatic installation options below will install or update python-ldap as
@@ -60,51 +60,51 @@ Add django-ldap-sync to the ``INSTALLED_APPS`` setting within your project's
        'ldap_sync',
    )
 
-django-ldap-sync has a number of required settings that need to be configured
+django-ldap-sync has a number of required settings that must be configured
 before it can operate. See the :ref:`settings` documentation for a complete
 list of the required and optional settings.
 
 Running
 -------
 
-Typically you will want to run this management command on a regular basis to
-keep the users synchronized. There are several ways to accomplish this
-depending on your needs and environment.
+There are several tools available to synchronize data depending on your needs
+and environment.
 
-Manual
-~~~~~~
+Management Command
+~~~~~~~~~~~~~~~~~~
 
-The management command can always be run manually, which might be sufficient
-for some simple or relatively static environments. Run the command with::
+A management command is included to run manual synchronizations. It can also
+be run as part of an automated cron task. Run the command with::
 
-   python manage.py ldap_sync
-
-Cron
-~~~~
-
-The next logical step from running the command manually is to automate running
-it on a regular basis with cron (or your system's equivalent). The
-implementation details depend on your system and environment. If you do not
-have access to the local system cron, consider `django-cron`_ or
-`django-poormanscron`_.
+   python manage.py syncldap
 
 Celery
 ~~~~~~
 
-Another methodology is to run the command as a periodic `Celery`_ task.
-Particularly if you already have Celery available, this can be a good way to
-run the command in a more distributed fashion. django-ldap-sync comes with a
-Celery task that wraps the management command, so only some additional
+A Celery task is included to make the synchronization task more distributed.
+Assuming Celery is installed and configured, only some additional
 configuration is required within your project's ``settings.py`` file::
 
    from datetime import timedelta
 
-   CELERYBEAT_SCHEDULE = {
-       'synchronize_local_users': {
+   CELERY_BEAT_SCHEDULE = {
+       'synchronize_ldap': {
            'task': 'ldap_sync.tasks.syncldap',
            'schedule': timedelta(minutes=30),
-       }
+       },
    }
+
+Code
+~~~~
+
+For complete control or to integrate it with other functionality, the
+synchronization can also be performed directly in code::
+
+   from ldap_sync.sync import SyncLDAP
+
+   sync_ldap = SyncLDAP()
+   sync_ldap.sync_groups()
+   sync_ldap.sync_users()
 
 For more information and other configuration options, see the Celery
 documentation on `periodic tasks`_.
@@ -117,7 +117,5 @@ documentation on `periodic tasks`_.
 .. _PyPI: https://pypi.python.org/pypi/django-ldap-sync/
 .. _GitHub: https://github.com/jbittel/django-ldap-sync
 .. _tarball: https://github.com/jbittel/django-ldap-sync/tarball/master
-.. _django-cron: http://code.google.com/p/django-cron/
-.. _django-poormanscron: http://code.google.com/p/django-poormanscron/
 .. _Celery: http://www.celeryproject.org
 .. _periodic tasks: http://docs.celeryproject.org/en/latest/userguide/periodic-tasks.html
