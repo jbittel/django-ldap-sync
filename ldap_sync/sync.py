@@ -60,7 +60,7 @@ class SyncLDAP(object):
 
             for ldap_name, field in self.settings.GROUP_ATTRIBUTES.items():
                 try:
-                    defaults[field] = self.settings.GROUP_ATTRIBUTES[ldap_name][0].decode('utf-8')
+                    defaults[field] = ldap_attributes[ldap_name][0].decode('utf-8')
                 except KeyError:
                     defaults[field] = ''
 
